@@ -1,0 +1,632 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		8018800E2E0D237500C3E19F /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 8018800D2E0D237500C3E19F /* FirebaseAuth */; };
+		801880102E0D237500C3E19F /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 8018800F2E0D237500C3E19F /* FirebaseDatabase */; };
+		801880122E0D237500C3E19F /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 801880112E0D237500C3E19F /* FirebaseMessaging */; };
+		801880222E0D384900C3E19F /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 801880212E0D384900C3E19F /* FirebaseCore */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		80187FBD2E0D1E3A00C3E19F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 80187FA72E0D1E3900C3E19F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 80187FAE2E0D1E3900C3E19F;
+			remoteInfo = SOSync;
+		};
+		80187FC72E0D1E3A00C3E19F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 80187FA72E0D1E3900C3E19F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 80187FAE2E0D1E3900C3E19F;
+			remoteInfo = SOSync;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		80187FAF2E0D1E3900C3E19F /* SOSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SOSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		80187FBC2E0D1E3A00C3E19F /* SOSyncTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SOSyncTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		80187FC62E0D1E3A00C3E19F /* SOSyncUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SOSyncUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		80187FFA2E0D21D700C3E19F /* Exceptions for "SOSync" folder in "SOSync" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 80187FAE2E0D1E3900C3E19F /* SOSync */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		80187FB12E0D1E3900C3E19F /* SOSync */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				80187FFA2E0D21D700C3E19F /* Exceptions for "SOSync" folder in "SOSync" target */,
+			);
+			path = SOSync;
+			sourceTree = "<group>";
+		};
+		80187FBF2E0D1E3A00C3E19F /* SOSyncTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SOSyncTests;
+			sourceTree = "<group>";
+		};
+		80187FC92E0D1E3A00C3E19F /* SOSyncUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SOSyncUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		80187FAC2E0D1E3900C3E19F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				801880122E0D237500C3E19F /* FirebaseMessaging in Frameworks */,
+				801880102E0D237500C3E19F /* FirebaseDatabase in Frameworks */,
+				801880222E0D384900C3E19F /* FirebaseCore in Frameworks */,
+				8018800E2E0D237500C3E19F /* FirebaseAuth in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80187FB92E0D1E3A00C3E19F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80187FC32E0D1E3A00C3E19F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		80187FA62E0D1E3900C3E19F = {
+			isa = PBXGroup;
+			children = (
+				80187FB12E0D1E3900C3E19F /* SOSync */,
+				80187FBF2E0D1E3A00C3E19F /* SOSyncTests */,
+				80187FC92E0D1E3A00C3E19F /* SOSyncUITests */,
+				80187FB02E0D1E3900C3E19F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		80187FB02E0D1E3900C3E19F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				80187FAF2E0D1E3900C3E19F /* SOSync.app */,
+				80187FBC2E0D1E3A00C3E19F /* SOSyncTests.xctest */,
+				80187FC62E0D1E3A00C3E19F /* SOSyncUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		80187FAE2E0D1E3900C3E19F /* SOSync */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 80187FD02E0D1E3A00C3E19F /* Build configuration list for PBXNativeTarget "SOSync" */;
+			buildPhases = (
+				80187FAB2E0D1E3900C3E19F /* Sources */,
+				80187FAC2E0D1E3900C3E19F /* Frameworks */,
+				80187FAD2E0D1E3900C3E19F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				80187FB12E0D1E3900C3E19F /* SOSync */,
+			);
+			name = SOSync;
+			packageProductDependencies = (
+				8018800D2E0D237500C3E19F /* FirebaseAuth */,
+				8018800F2E0D237500C3E19F /* FirebaseDatabase */,
+				801880112E0D237500C3E19F /* FirebaseMessaging */,
+				801880212E0D384900C3E19F /* FirebaseCore */,
+			);
+			productName = SOSync;
+			productReference = 80187FAF2E0D1E3900C3E19F /* SOSync.app */;
+			productType = "com.apple.product-type.application";
+		};
+		80187FBB2E0D1E3A00C3E19F /* SOSyncTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 80187FD32E0D1E3A00C3E19F /* Build configuration list for PBXNativeTarget "SOSyncTests" */;
+			buildPhases = (
+				80187FB82E0D1E3A00C3E19F /* Sources */,
+				80187FB92E0D1E3A00C3E19F /* Frameworks */,
+				80187FBA2E0D1E3A00C3E19F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				80187FBE2E0D1E3A00C3E19F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				80187FBF2E0D1E3A00C3E19F /* SOSyncTests */,
+			);
+			name = SOSyncTests;
+			packageProductDependencies = (
+			);
+			productName = SOSyncTests;
+			productReference = 80187FBC2E0D1E3A00C3E19F /* SOSyncTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		80187FC52E0D1E3A00C3E19F /* SOSyncUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 80187FD62E0D1E3A00C3E19F /* Build configuration list for PBXNativeTarget "SOSyncUITests" */;
+			buildPhases = (
+				80187FC22E0D1E3A00C3E19F /* Sources */,
+				80187FC32E0D1E3A00C3E19F /* Frameworks */,
+				80187FC42E0D1E3A00C3E19F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				80187FC82E0D1E3A00C3E19F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				80187FC92E0D1E3A00C3E19F /* SOSyncUITests */,
+			);
+			name = SOSyncUITests;
+			packageProductDependencies = (
+			);
+			productName = SOSyncUITests;
+			productReference = 80187FC62E0D1E3A00C3E19F /* SOSyncUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		80187FA72E0D1E3900C3E19F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					80187FAE2E0D1E3900C3E19F = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					80187FBB2E0D1E3A00C3E19F = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 80187FAE2E0D1E3900C3E19F;
+					};
+					80187FC52E0D1E3A00C3E19F = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 80187FAE2E0D1E3900C3E19F;
+					};
+				};
+			};
+			buildConfigurationList = 80187FAA2E0D1E3900C3E19F /* Build configuration list for PBXProject "SOSync" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 80187FA62E0D1E3900C3E19F;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8018800C2E0D237500C3E19F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 80187FB02E0D1E3900C3E19F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				80187FAE2E0D1E3900C3E19F /* SOSync */,
+				80187FBB2E0D1E3A00C3E19F /* SOSyncTests */,
+				80187FC52E0D1E3A00C3E19F /* SOSyncUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		80187FAD2E0D1E3900C3E19F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80187FBA2E0D1E3A00C3E19F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80187FC42E0D1E3A00C3E19F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		80187FAB2E0D1E3900C3E19F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80187FB82E0D1E3A00C3E19F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80187FC22E0D1E3A00C3E19F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		80187FBE2E0D1E3A00C3E19F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 80187FAE2E0D1E3900C3E19F /* SOSync */;
+			targetProxy = 80187FBD2E0D1E3A00C3E19F /* PBXContainerItemProxy */;
+		};
+		80187FC82E0D1E3A00C3E19F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 80187FAE2E0D1E3900C3E19F /* SOSync */;
+			targetProxy = 80187FC72E0D1E3A00C3E19F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		80187FCE2E0D1E3A00C3E19F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = ATRVT7XSB8;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		80187FCF2E0D1E3A00C3E19F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = ATRVT7XSB8;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		80187FD12E0D1E3A00C3E19F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ATRVT7XSB8;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SOSync/Info.plist;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SOSync needs your location to share it with your group members during emergencies";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.irestweb.SOSync;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		80187FD22E0D1E3A00C3E19F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ATRVT7XSB8;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SOSync/Info.plist;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SOSync needs your location to share it with your group members during emergencies";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.irestweb.SOSync;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		80187FD42E0D1E3A00C3E19F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ATRVT7XSB8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.irestweb.SOSyncTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SOSync.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SOSync";
+			};
+			name = Debug;
+		};
+		80187FD52E0D1E3A00C3E19F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ATRVT7XSB8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.irestweb.SOSyncTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SOSync.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SOSync";
+			};
+			name = Release;
+		};
+		80187FD72E0D1E3A00C3E19F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ATRVT7XSB8;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.irestweb.SOSyncUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SOSync;
+			};
+			name = Debug;
+		};
+		80187FD82E0D1E3A00C3E19F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ATRVT7XSB8;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.irestweb.SOSyncUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SOSync;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		80187FAA2E0D1E3900C3E19F /* Build configuration list for PBXProject "SOSync" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				80187FCE2E0D1E3A00C3E19F /* Debug */,
+				80187FCF2E0D1E3A00C3E19F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		80187FD02E0D1E3A00C3E19F /* Build configuration list for PBXNativeTarget "SOSync" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				80187FD12E0D1E3A00C3E19F /* Debug */,
+				80187FD22E0D1E3A00C3E19F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		80187FD32E0D1E3A00C3E19F /* Build configuration list for PBXNativeTarget "SOSyncTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				80187FD42E0D1E3A00C3E19F /* Debug */,
+				80187FD52E0D1E3A00C3E19F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		80187FD62E0D1E3A00C3E19F /* Build configuration list for PBXNativeTarget "SOSyncUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				80187FD72E0D1E3A00C3E19F /* Debug */,
+				80187FD82E0D1E3A00C3E19F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		8018800C2E0D237500C3E19F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.15.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8018800D2E0D237500C3E19F /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8018800C2E0D237500C3E19F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		8018800F2E0D237500C3E19F /* FirebaseDatabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8018800C2E0D237500C3E19F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseDatabase;
+		};
+		801880112E0D237500C3E19F /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8018800C2E0D237500C3E19F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		801880212E0D384900C3E19F /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8018800C2E0D237500C3E19F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 80187FA72E0D1E3900C3E19F /* Project object */;
+}

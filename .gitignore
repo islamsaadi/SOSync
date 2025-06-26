@@ -1,0 +1,10 @@
+# macOS
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# App-specific secrets
+
+GoogleService-Info.plist
+
