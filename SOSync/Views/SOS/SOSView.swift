@@ -100,7 +100,7 @@ struct SOSView: View {
         
         Task {
             for group in groupViewModel.groups {
-                await groupViewModel.sendSOSAlert(
+                _ = await groupViewModel.sendSOSAlert(
                     groupId: group.id,
                     userId: userId,
                     location: locationData,

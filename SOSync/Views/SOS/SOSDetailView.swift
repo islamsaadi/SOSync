@@ -41,8 +41,11 @@ struct SOSDetailView: View {
                         Label("Send SOS Alert", systemImage: "exclamationmark.triangle.fill")
                     }
                 }
-                .buttonStyle(PrimaryButtonStyle())
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .foregroundStyle(.white)
                 .background(Color.red)
+                .cornerRadius(10)
                 .padding(.horizontal)
                 .disabled(isSending)
                 

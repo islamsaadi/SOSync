@@ -7,6 +7,7 @@ struct GroupDetailView: View {
     @ObservedObject var groupViewModel: GroupViewModel
     @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var locationManager = LocationManager()
+    @Environment(\.dismiss) var dismiss
     
     @State private var showInviteUser = false
     @State private var showGroupSettings = false
@@ -46,11 +47,7 @@ struct GroupDetailView: View {
         
         let activeCheck = pendingChecks.first
         
-        if let check = activeCheck {
-            print("🎯 Found active safety check: \(check.id)")
-        } else if shouldShowSafetyCheck {
-            print("⚠️ Group is in checkingStatus but no pending safety check found - forcing reload")
-            
+        if let check = activeCheck, shouldShowSafetyCheck {
             // Force reload safety checks if group says we should have one but we don't
             Task {
                 await groupViewModel.forceReloadSafetyChecks(groupId: currentGroupId)
@@ -156,8 +153,34 @@ struct GroupDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if isAdmin {
-                        Button { showGroupSettings = true } label: {
-                            Image(systemName: "gearshape")
+                        HStack(spacing: 12) {
+                            // Pending invitations badge
+                            if !groupViewModel.pendingInvitations.isEmpty {
+                                Button {
+                                    loadPendingInvitationsAndShowSettings()
+                                } label: {
+                                    ZStack {
+                                        Image(systemName: "envelope.fill")
+                                            .foregroundStyle(.blue)
+                                        
+                                        // Badge
+                                        Text("\(groupViewModel.pendingInvitations.count)")
+                                            .font(.caption2)
+                                            .foregroundStyle(.white)
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 2)
+                                            .background(Color.red)
+                                            .clipShape(Circle())
+                                            .offset(x: 8, y: -8)
+                                    }
+                                }
+                            }
+                            
+                            Button {
+                                loadPendingInvitationsAndShowSettings()
+                            } label: {
+                                Image(systemName: "gearshape")
+                            }
                         }
                     }
                 }
@@ -166,7 +189,10 @@ struct GroupDetailView: View {
                 InviteUserView(group: currentGroup, groupViewModel: groupViewModel)
             }
             .sheet(isPresented: $showGroupSettings) {
-                GroupSettingsView(group: currentGroup, groupViewModel: groupViewModel)
+                GroupSettingsView(group: currentGroup, groupViewModel: groupViewModel, onGroupDeleted: {
+                    // This runs when group is deleted
+                    dismiss() // Goes back to groups list
+                })
             }
             .alert("Initiate Safety Check?", isPresented: $showingSafetyCheckAlert) {
                 Button("Cancel", role: .cancel) { }
@@ -496,6 +522,11 @@ struct GroupDetailView: View {
             // Also force reload SOS alerts
             await groupViewModel.forceReloadSOSAlerts(groupId: currentGroup.id)
             
+            // Load pending invitations if admin
+            if isAdmin {
+                await groupViewModel.loadPendingInvitations(groupId: currentGroup.id)
+            }
+            
             // Debug current state
             await MainActor.run {
                 let alerts = groupViewModel.activeSOSAlerts
@@ -514,6 +545,20 @@ struct GroupDetailView: View {
         await groupViewModel.loadGroupMembers(group: currentGroup)
         await groupViewModel.forceReloadSafetyChecks(groupId: currentGroup.id)
         await groupViewModel.forceReloadSOSAlerts(groupId: currentGroup.id)
+        
+        // Refresh pending invitations if admin
+        if isAdmin {
+            await groupViewModel.loadPendingInvitations(groupId: currentGroup.id)
+        }
+    }
+    
+    private func loadPendingInvitationsAndShowSettings() {
+        Task {
+            await groupViewModel.loadPendingInvitations(groupId: currentGroup.id)
+            await MainActor.run {
+                showGroupSettings = true
+            }
+        }
     }
 }
 

@@ -197,10 +197,16 @@ struct InviteUserView: View {
     }
     
     private func inviteUser() {
-        guard let user = foundUser else { return }
+        guard let user = foundUser,
+              let currentUserId = authViewModel.currentUser?.id else { return }
         
         Task {
-            await groupViewModel.inviteUserToGroup(groupId: group.id, invitedUserId: user.id)
+            // Enhanced invitation with inviter information
+            await groupViewModel.inviteUserToGroup(
+                groupId: group.id,
+                invitedUserId: user.id,
+                inviterUserId: currentUserId
+            )
             await MainActor.run {
                 dismiss()
             }

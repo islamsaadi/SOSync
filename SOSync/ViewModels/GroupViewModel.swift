@@ -9,6 +9,7 @@ class GroupViewModel: ObservableObject {
     @Published var groups: [SafetyGroup] = []
     @Published var currentGroup: SafetyGroup?
     @Published var groupMembers: [User] = []
+    @Published var pendingInvitations: [GroupInvitation] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var safetyChecks: [SafetyCheck] = []
@@ -18,6 +19,7 @@ class GroupViewModel: ObservableObject {
     private var groupListeners: [String: DatabaseHandle] = [:]
     private var safetyCheckListeners: [String: DatabaseHandle] = [:]
     private var sosAlertListeners: [String: DatabaseHandle] = [:]
+    private var pendingInvitationsListener: DatabaseHandle?
     
     @Published var sosAlertsByGroup: [String: [SOSAlert]] = [:]
     
@@ -89,8 +91,27 @@ class GroupViewModel: ObservableObject {
         isLoading = false
     }
 
-    func inviteUserToGroup(groupId: String, invitedUserId: String) async {
+    // MARK: - Enhanced Invitation System
+    func inviteUserToGroup(groupId: String, invitedUserId: String, inviterUserId: String) async {
         do {
+            // Get inviter information
+            let inviterSnapshot = try await database.child("users").child(inviterUserId).getData()
+            guard let inviterData = inviterSnapshot.value as? [String: Any],
+                  let inviterUsername = inviterData["username"] as? String,
+                  let inviterPhone = inviterData["phoneNumber"] as? String else {
+                errorMessage = "Could not get inviter information"
+                return
+            }
+            
+            // Get group information
+            let groupSnapshot = try await database.child("groups").child(groupId).getData()
+            guard let groupData = groupSnapshot.value as? [String: Any],
+                  let groupName = groupData["name"] as? String else {
+                errorMessage = "Could not get group information"
+                return
+            }
+            
+            // Add to pending members
             let pendingRef = database.child("groups").child(groupId).child("pendingMembers")
             let snapshot = try await pendingRef.getData()
             var pending = snapshot.value as? [String] ?? []
@@ -98,11 +119,18 @@ class GroupViewModel: ObservableObject {
                 pending.append(invitedUserId)
                 try await pendingRef.setValue(pending)
 
-                let inviteData: [String:Any] = [
+                // Create enhanced invitation with inviter details
+                let inviteData: [String: Any] = [
+                    "id": UUID().uuidString,
                     "groupId": groupId,
+                    "groupName": groupName,
                     "invitedUserId": invitedUserId,
+                    "invitedByUserId": inviterUserId,
+                    "invitedByUsername": inviterUsername,
+                    "invitedByPhone": inviterPhone,
                     "timestamp": Date().timeIntervalSince1970
                 ]
+                
                 try await database.child("invitations").childByAutoId().setValue(inviteData)
             }
         } catch {
@@ -137,6 +165,51 @@ class GroupViewModel: ObservableObject {
                 ug.append(groupId)
                 try await userGroupsRef.setValue(ug)
             }
+            
+            // Remove invitation
+            await removeInvitation(groupId: groupId, userId: userId)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Enhanced Member Management
+    func removeMemberFromGroup(groupId: String, memberIdToRemove: String, adminId: String) async {
+        do {
+            // Verify admin permissions
+            let groupSnapshot = try await database.child("groups").child(groupId).getData()
+            guard let groupData = groupSnapshot.value as? [String: Any],
+                  let currentAdminId = groupData["adminId"] as? String,
+                  currentAdminId == adminId else {
+                errorMessage = "Only group admin can remove members"
+                return
+            }
+            
+            // Cannot remove admin
+            if memberIdToRemove == adminId {
+                errorMessage = "Cannot remove group admin"
+                return
+            }
+            
+            // Remove from group members
+            let membersRef = database.child("groups").child(groupId).child("members")
+            let membersSnapshot = try await membersRef.getData()
+            var members = membersSnapshot.value as? [String] ?? []
+            members.removeAll { $0 == memberIdToRemove }
+            try await membersRef.setValue(members)
+            
+            // Remove group from user's groups
+            let userGroupsRef = database.child("users").child(memberIdToRemove).child("groups")
+            let userGroupsSnapshot = try await userGroupsRef.getData()
+            var userGroups = userGroupsSnapshot.value as? [String] ?? []
+            userGroups.removeAll { $0 == groupId }
+            try await userGroupsRef.setValue(userGroups)
+            
+            // Reload group members
+            if let currentGroup = currentGroup, currentGroup.id == groupId {
+                await loadGroupMembers(group: currentGroup)
+            }
+            
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -164,6 +237,274 @@ class GroupViewModel: ObservableObject {
             }
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+    
+    // MARK: - Enhanced Group Management
+    func deleteGroup(groupId: String, adminId: String) async {
+        do {
+            // Verify admin permissions
+            let groupSnapshot = try await database.child("groups").child(groupId).getData()
+            guard let groupData = groupSnapshot.value as? [String: Any],
+                  let currentAdminId = groupData["adminId"] as? String,
+                  currentAdminId == adminId else {
+                errorMessage = "Only group admin can delete the group"
+                return
+            }
+            
+            let members = groupData["members"] as? [String] ?? []
+            
+            // Remove group from all members' group lists
+            for memberId in members {
+                let userGroupsRef = database.child("users").child(memberId).child("groups")
+                let userGroupsSnapshot = try await userGroupsRef.getData()
+                var userGroups = userGroupsSnapshot.value as? [String] ?? []
+                userGroups.removeAll { $0 == groupId }
+                try await userGroupsRef.setValue(userGroups)
+            }
+            
+            // Delete all related data
+            try await database.child("groups").child(groupId).removeValue()
+            
+            // Delete safety checks for this group
+            let safetyChecksSnapshot = try await database.child("safetyChecks").getData()
+            let safetyChecksChildren = safetyChecksSnapshot.children.allObjects
+            for child in safetyChecksChildren {
+                if let childSnapshot = child as? DataSnapshot,
+                   let checkData = childSnapshot.value as? [String: Any],
+                   let checkGroupId = checkData["groupId"] as? String,
+                   checkGroupId == groupId {
+                    try await database.child("safetyChecks").child(childSnapshot.key).removeValue()
+                }
+            }
+            
+            // Delete SOS alerts for this group
+            let sosAlertsSnapshot = try await database.child("sosAlerts").getData()
+            let sosAlertsChildren = sosAlertsSnapshot.children.allObjects
+            for child in sosAlertsChildren {
+                if let childSnapshot = child as? DataSnapshot,
+                   let alertData = childSnapshot.value as? [String: Any],
+                   let alertGroupId = alertData["groupId"] as? String,
+                   alertGroupId == groupId {
+                    try await database.child("sosAlerts").child(childSnapshot.key).removeValue()
+                }
+            }
+            
+            // Delete invitations for this group
+            let invitationsSnapshot = try await database.child("invitations").getData()
+            let invitationsChildren = invitationsSnapshot.children.allObjects
+            for child in invitationsChildren {
+                if let childSnapshot = child as? DataSnapshot,
+                   let inviteData = childSnapshot.value as? [String: Any],
+                   let inviteGroupId = inviteData["groupId"] as? String,
+                   inviteGroupId == groupId {
+                    try await database.child("invitations").child(childSnapshot.key).removeValue()
+                }
+            }
+            
+            // Reload user groups
+            await loadUserGroups(userId: adminId)
+            
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    func updateGroupName(groupId: String, newName: String, adminId: String) async {
+        do {
+            // Verify admin permissions
+            let groupSnapshot = try await database.child("groups").child(groupId).getData()
+            guard let groupData = groupSnapshot.value as? [String: Any],
+                  let currentAdminId = groupData["adminId"] as? String,
+                  currentAdminId == adminId else {
+                errorMessage = "Only group admin can edit group name"
+                return
+            }
+            
+            // Update group name
+            try await database.child("groups").child(groupId).child("name").setValue(newName)
+            
+            // Update current group if it's the one being edited
+            if let currentGroup = currentGroup, currentGroup.id == groupId {
+                var updatedGroup = currentGroup
+                updatedGroup.name = newName
+                self.currentGroup = updatedGroup
+            }
+            
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    func updateSafetyCheckInterval(groupId: String, newInterval: Int, adminId: String) async {
+        do {
+            // Verify admin permissions
+            let groupSnapshot = try await database.child("groups").child(groupId).getData()
+            guard let groupData = groupSnapshot.value as? [String: Any],
+                  let currentAdminId = groupData["adminId"] as? String,
+                  currentAdminId == adminId else {
+                errorMessage = "Only group admin can edit safety check interval"
+                return
+            }
+            
+            // Validate interval (between 1 and 1440 minutes = 24 hours)
+            guard newInterval >= 1 && newInterval <= 1440 else {
+                errorMessage = "Safety check interval must be between 1 and 1440 minutes"
+                return
+            }
+            
+            // Update safety check interval
+            try await database.child("groups").child(groupId).child("safetyCheckInterval").setValue(newInterval)
+            
+            // Update current group if it's the one being edited
+            if let currentGroup = currentGroup, currentGroup.id == groupId {
+                var updatedGroup = currentGroup
+                updatedGroup.safetyCheckInterval = newInterval
+                self.currentGroup = updatedGroup
+            }
+            
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    func updateSOSInterval(groupId: String, newInterval: Int, adminId: String) async {
+        do {
+            // Verify admin permissions
+            let groupSnapshot = try await database.child("groups").child(groupId).getData()
+            guard let groupData = groupSnapshot.value as? [String: Any],
+                  let currentAdminId = groupData["adminId"] as? String,
+                  currentAdminId == adminId else {
+                errorMessage = "Only group admin can edit SOS interval"
+                return
+            }
+            
+            // Validate interval (between 1 and 60 minutes)
+            guard newInterval >= 1 && newInterval <= 60 else {
+                errorMessage = "SOS interval must be between 1 and 60 minutes"
+                return
+            }
+            
+            // Update SOS interval
+            try await database.child("groups").child(groupId).child("sosInterval").setValue(newInterval)
+            
+            // Update current group if it's the one being edited
+            if let currentGroup = currentGroup, currentGroup.id == groupId {
+                var updatedGroup = currentGroup
+                updatedGroup.sosInterval = newInterval
+                self.currentGroup = updatedGroup
+            }
+            
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    // MARK: - Pending Invitations Management
+    func loadPendingInvitations(groupId: String) async {
+        do {
+            let groupSnapshot = try await database.child("groups").child(groupId).getData()
+            guard let groupData = groupSnapshot.value as? [String: Any],
+                  let pendingMemberIds = groupData["pendingMembers"] as? [String] else {
+                pendingInvitations = []
+                return
+            }
+            
+            var invitations: [GroupInvitation] = []
+            
+            // Get invitation details for each pending member
+            let invitationsSnapshot = try await database.child("invitations").getData()
+            let invitationsChildren = invitationsSnapshot.children.allObjects
+            
+            for child in invitationsChildren {
+                if let childSnapshot = child as? DataSnapshot,
+                   let inviteData = childSnapshot.value as? [String: Any],
+                   let inviteGroupId = inviteData["groupId"] as? String,
+                   let invitedUserId = inviteData["invitedUserId"] as? String,
+                   inviteGroupId == groupId,
+                   pendingMemberIds.contains(invitedUserId) {
+                    
+                    // Get invited user's username
+                    let userSnapshot = try await database.child("users").child(invitedUserId).getData()
+                    let userData = userSnapshot.value as? [String: Any]
+                    let invitedUsername = userData?["username"] as? String ?? "Unknown"
+                    
+                    let invitation = GroupInvitation(
+                        id: childSnapshot.key,
+                        groupId: inviteGroupId,
+                        groupName: inviteData["groupName"] as? String ?? "Unknown Group",
+                        invitedUserId: invitedUserId,
+                        invitedUsername: invitedUsername,
+                        invitedByUserId: inviteData["invitedByUserId"] as? String ?? "",
+                        invitedByUsername: inviteData["invitedByUsername"] as? String,
+                        invitedByPhone: inviteData["invitedByPhone"] as? String,
+                        timestamp: inviteData["timestamp"] as? Double ?? 0
+                    )
+                    
+                    invitations.append(invitation)
+                }
+            }
+            
+            pendingInvitations = invitations.sorted { $0.timestamp > $1.timestamp }
+            
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    func cancelInvitation(invitationId: String, groupId: String, invitedUserId: String, adminId: String) async {
+        do {
+            // Verify admin permissions
+            let groupSnapshot = try await database.child("groups").child(groupId).getData()
+            guard let groupData = groupSnapshot.value as? [String: Any],
+                  let currentAdminId = groupData["adminId"] as? String,
+                  currentAdminId == adminId else {
+                errorMessage = "Only group admin can cancel invitations"
+                return
+            }
+            
+            // Remove from pending members
+            let pendingRef = database.child("groups").child(groupId).child("pendingMembers")
+            let pendingSnapshot = try await pendingRef.getData()
+            var pending = pendingSnapshot.value as? [String] ?? []
+            pending.removeAll { $0 == invitedUserId }
+            
+            if pending.isEmpty {
+                try await pendingRef.removeValue()
+            } else {
+                try await pendingRef.setValue(pending)
+            }
+            
+            // Remove invitation record
+            try await database.child("invitations").child(invitationId).removeValue()
+            
+            // Reload pending invitations
+            await loadPendingInvitations(groupId: groupId)
+            
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    private func removeInvitation(groupId: String, userId: String) async {
+        do {
+            // Find and remove the invitation
+            let invitationsSnapshot = try await database.child("invitations").getData()
+            let invitationsChildren = invitationsSnapshot.children.allObjects
+            
+            for child in invitationsChildren {
+                if let childSnapshot = child as? DataSnapshot,
+                   let inviteData = childSnapshot.value as? [String: Any],
+                   let inviteGroupId = inviteData["groupId"] as? String,
+                   let invitedUserId = inviteData["invitedUserId"] as? String,
+                   inviteGroupId == groupId,
+                   invitedUserId == userId {
+                    try await database.child("invitations").child(childSnapshot.key).removeValue()
+                    break
+                }
+            }
+        } catch {
+            print("Error removing invitation: \(error)")
         }
     }
     
@@ -785,63 +1126,127 @@ class GroupViewModel: ObservableObject {
                 return
             }
             
-            guard let dict = snap.value as? [String: Any] else {
+            guard let responseData = snap.value as? [String: Any] else {
                 print("❌ Could not parse safety check data")
                 return
             }
             
-            guard let groupId = dict["groupId"] as? String else {
-                print("❌ GroupId not found in safety check data")
+            // ✅ SMART DETECTION: Check if we got specific data or all data
+            var safetyCheckData: [String: Any]
+            
+            if responseData.keys.contains("groupId") {
+                // ✅ CASE 1: We got the specific safety check directly
+                print("✅ Received SPECIFIC safety check data")
+                safetyCheckData = responseData
+                
+            } else if responseData.keys.contains(checkId) {
+                // ✅ CASE 2: We got all safety checks, extract the specific one
+                print("🔍 Received ALL safety checks data, extracting specific one")
+                guard let specificData = responseData[checkId] as? [String: Any] else {
+                    print("❌ Could not extract specific safety check: \(checkId)")
+                    print("🔍 Available safety checks: \(Array(responseData.keys))")
+                    return
+                }
+                safetyCheckData = specificData
+                
+            } else {
+                // ❌ CASE 3: Unexpected data structure
+                print("❌ Unexpected data structure received")
+                print("🔍 Response keys: \(Array(responseData.keys))")
+                print("🔍 Looking for either 'groupId' (specific) or '\(checkId)' (all data)")
                 return
             }
             
-            guard let safetyCheckTimestamp = dict["timestamp"] as? Double else {
-                print("❌ Safety check timestamp not found")
+            
+            // ✅ USE YOUR SAFETYCHECK MODEL
+            do {
+                let jsonData = try JSONSerialization.data(withJSONObject: safetyCheckData)
+                let safetyCheck = try JSONDecoder().decode(SafetyCheck.self, from: jsonData)
+                
+                print("✅ Successfully decoded SafetyCheck model:")
+                print("   - ID: \(safetyCheck.id)")
+                print("   - GroupId: \(safetyCheck.groupId)")
+                print("   - Status: \(safetyCheck.status)")
+                print("   - Responses: \(safetyCheck.responses.count)")
+                
+                // Now we can work with the clean model!
+                await processCompletedSafetyCheck(safetyCheck)
+                
+            } catch {
+                print("❌ Error decoding SafetyCheck model: \(error)")
+                if let decodingError = error as? DecodingError {
+                    switch decodingError {
+                    case .keyNotFound(let key, _):
+                        print("❌ Missing key: \(key)")
+                    case .typeMismatch(let type, let context):
+                        print("❌ Type mismatch for \(type) at \(context.codingPath)")
+                    case .valueNotFound(let type, let context):
+                        print("❌ Value not found for \(type) at \(context.codingPath)")
+                    default:
+                        print("❌ Other decoding error: \(decodingError)")
+                    }
+                }
                 return
             }
+            
+        } catch {
+            print("❌ Error checking safety check completion: \(error)")
+            errorMessage = "Failed to complete safety check: \(error.localizedDescription)"
+        }
+    }
+    
+    private func processCompletedSafetyCheck(_ safetyCheck: SafetyCheck) async {
+        do {
+            print("🔍 Processing safety check: \(safetyCheck.id)")
             
             // Get group data
-            let gSnap = try await database.child("groups").child(groupId).getData()
+            let gSnap = try await database.child("groups").child(safetyCheck.groupId).getData()
             guard gSnap.exists(),
                   let gDict = gSnap.value as? [String: Any],
                   let members = gDict["members"] as? [String] else {
-                print("❌ Could not get group members")
+                print("❌ Could not get group members for group: \(safetyCheck.groupId)")
                 return
             }
             
-            // Get responses
-            let responses = dict["responses"] as? [String: Any] ?? [:]
-            let responseCount = responses.count
+            print("🔍 Group members: \(members)")
+            print("🔍 Group member count: \(members.count)")
+            print("🔍 Current responses: \(safetyCheck.responses.count)")
             
-            print("📝 Current responses: \(responseCount)/\(members.count)")
+            // Show response details using the model
+            let respondedMembers = Array(safetyCheck.responses.keys)
+            let missingMembers = members.filter { !respondedMembers.contains($0) }
             
-            // Check for SOS responses
+            print("✅ Members who responded: \(respondedMembers)")
+            print("⏳ Members still pending: \(missingMembers)")
+            
+            // Check each response using the model
             var hasSOS = false
-            for (_, resp) in responses {
-                if let r = resp as? [String: Any],
-                   let status = r["status"] as? String,
-                   status == SafetyResponseStatus.sos.rawValue {
+            for (userId, response) in safetyCheck.responses {
+                print("📝 User \(userId) responded: \(response.status.rawValue)")
+                if response.status == .sos {
                     hasSOS = true
-                    break
+                    print("🚨 SOS response detected from user: \(userId)")
                 }
             }
             
-            // ✅ Check for users who marked themselves as SAFE and resolve their SOS alerts
+            // ✅ Resolve SOS alerts for SAFE responses
             await resolveSOSAlertsForSafeResponses(
-                groupId: groupId,
-                responses: responses,
-                safetyCheckTimestamp: safetyCheckTimestamp
+                groupId: safetyCheck.groupId,
+                responses: safetyCheck.responses, // Pass the clean model responses
+                safetyCheckTimestamp: safetyCheck.timestamp
             )
             
             // Check if all members have responded
             let allResponded = members.allSatisfy { memberId in
-                responses[memberId] != nil
+                safetyCheck.responses[memberId] != nil
             }
+            
+            print("🔍 All responded check: \(allResponded)")
             
             if allResponded {
                 print("✅ All members have responded - processing final status")
                 
-                // Determine final statuses
+                // Determine final statuses using model
                 let finalCheckStatus: SafetyCheckStatus = hasSOS ? .emergency : .allSafe
                 let finalGroupStatus: SafetyGroupStatus = hasSOS ? .emergency : .allSafe
                 
@@ -853,31 +1258,120 @@ class GroupViewModel: ObservableObject {
                 // Update safety check status
                 try await database
                     .child("safetyChecks")
-                    .child(checkId)
+                    .child(safetyCheck.id)
                     .child("status")
                     .setValue(finalCheckStatus.rawValue)
+                
+                print("✅ Updated safety check status to: \(finalCheckStatus.rawValue)")
                 
                 // Update group status (only if not already emergency from SOS)
                 if !hasSOS {
                     try await database
                         .child("groups")
-                        .child(groupId)
+                        .child(safetyCheck.groupId)
                         .child("currentStatus")
                         .setValue(finalGroupStatus.rawValue)
                     
+                    print("✅ Updated group status to: \(finalGroupStatus.rawValue)")
+                    
                     // Schedule auto-reset for allSafe status
                     if finalGroupStatus == .allSafe {
-                        await scheduleStatusReset(groupId: groupId, delayMinutes: 60)
+                        await scheduleStatusReset(groupId: safetyCheck.groupId, delayMinutes: 60)
                     }
                 }
                 
             } else {
-                print("⏳ Still waiting for responses from \(members.count - responseCount) members")
+                print("⏳ Still waiting for responses from \(members.count - safetyCheck.responses.count) members")
+                print("⏳ Missing responses from: \(missingMembers)")
+                
+                // Keep status as pending
+                try await database
+                    .child("safetyChecks")
+                    .child(safetyCheck.id)
+                    .child("status")
+                    .setValue(SafetyCheckStatus.pending.rawValue)
+                
+                await forceReloadSafetyChecks(groupId: safetyCheck.groupId);
+                
+                print("⏳ Kept safety check status as pending")
             }
             
         } catch {
-            print("❌ Error checking safety check completion: \(error)")
-            errorMessage = "Failed to complete safety check: \(error.localizedDescription)"
+            print("❌ Error processing safety check: \(error)")
+            errorMessage = "Failed to process safety check: \(error.localizedDescription)"
+        }
+    }
+
+    // ✅ ALSO UPDATE resolveSOSAlertsForSafeResponses TO USE MODELS
+    private func resolveSOSAlertsForSafeResponses(
+        groupId: String,
+        responses: [String: SafetyResponse], // Use the model type
+        safetyCheckTimestamp: Double
+    ) async {
+        
+        print("🔍 Checking for SOS alerts to resolve based on SAFE responses...")
+        
+        do {
+            // Get all active SOS alerts for this group
+            let sosSnapshot = try await database.child("sosAlerts")
+                .queryOrdered(byChild: "groupId")
+                .queryEqual(toValue: groupId)
+                .getData()
+            
+            guard sosSnapshot.exists() else {
+                print("🔍 No SOS alerts found for group")
+                return
+            }
+            
+            var alertsToResolve: [String] = []
+            var resolvedUsers: [String] = []
+            
+            // Check each SOS alert
+            let sosChildren = sosSnapshot.children.allObjects
+            for child in sosChildren {
+                if let childSnapshot = child as? DataSnapshot,
+                   let sosDict = childSnapshot.value as? [String: Any] {
+                    
+                    let sosAlertId = childSnapshot.key
+                    let sosUserId = sosDict["userId"] as? String ?? ""
+                    let sosTimestamp = sosDict["timestamp"] as? Double ?? 0
+                    let sosIsActive = sosDict["isActive"] as? Bool ?? false
+                    
+                    print("🔍 Checking SOS alert: \(sosAlertId)")
+                    print("   - User: \(sosUserId)")
+                    print("   - Timestamp: \(sosTimestamp)")
+                    print("   - Active: \(sosIsActive)")
+                    
+                    // Check if this user has an active SOS alert that's older than the safety check
+                    if sosIsActive &&
+                       sosTimestamp < safetyCheckTimestamp &&
+                       !sosUserId.isEmpty {
+                        
+                        // ✅ Use the model to check if user marked themselves as SAFE
+                        if let userResponse = responses[sosUserId],
+                           userResponse.status == .safe {
+                            
+                            print("✅ User \(sosUserId) marked SAFE after SOS - resolving alert \(sosAlertId)")
+                            alertsToResolve.append(sosAlertId)
+                            resolvedUsers.append(sosUserId)
+                        }
+                    }
+                }
+            }
+            
+            // Resolve the identified SOS alerts
+            for alertId in alertsToResolve {
+                await resolveSOSAlert(alertId: alertId)
+            }
+            
+            if !resolvedUsers.isEmpty {
+                print("✅ Resolved SOS alerts for users: \(resolvedUsers)")
+            } else {
+                print("🔍 No SOS alerts needed resolution")
+            }
+            
+        } catch {
+            print("❌ Error resolving SOS alerts: \(error)")
         }
     }
     
@@ -885,39 +1379,50 @@ class GroupViewModel: ObservableObject {
         do {
             print("🔍 Checking if user \(userId) has active SOS alerts to resolve...")
             
-            // Get the safety check timestamp
+            // Get the safety check timestamp - WITH BETTER ERROR HANDLING
             let checkSnapshot = try await database.child("safetyChecks").child(checkId).getData()
             
             var safetyCheckTimestamp: Double = Date().timeIntervalSince1970
             
-            if let checkData = checkSnapshot.value as? [String: Any],
-               let timestamp = checkData["timestamp"] as? Double {
-                safetyCheckTimestamp = timestamp
+            if let checkData = checkSnapshot.value as? [String: Any] {
+                if let timestamp = checkData["timestamp"] as? Double {
+                    safetyCheckTimestamp = timestamp
+                    print("🔍 Using safety check timestamp: \(safetyCheckTimestamp)")
+                } else {
+                    print("⚠️ No timestamp in safety check, using current time")
+                }
+            } else {
+                print("⚠️ Could not parse safety check data, using current time")
             }
             
-            // Get user's active SOS alerts
-            let sosSnapshot = try await database.child("sosAlerts")
-                .queryOrdered(byChild: "userId")
-                .queryEqual(toValue: userId)
-                .getData()
+            // SIMPLIFIED: Get ALL SOS alerts and filter manually (avoids index issues)
+            print("🔍 Getting all SOS alerts to filter manually...")
+            let sosSnapshot = try await database.child("sosAlerts").getData()
             
             guard sosSnapshot.exists() else {
-                print("🔍 No SOS alerts found for user \(userId)")
+                print("🔍 No SOS alerts found at all")
                 return
             }
             
             var resolvedCount = 0
-            
             let sosChildren = sosSnapshot.children.allObjects
+            
             for child in sosChildren {
                 if let childSnapshot = child as? DataSnapshot,
                    let sosDict = childSnapshot.value as? [String: Any] {
                     
+                    let sosUserId = sosDict["userId"] as? String ?? ""
                     let sosTimestamp = sosDict["timestamp"] as? Double ?? 0
                     let sosIsActive = sosDict["isActive"] as? Bool ?? false
                     
-                    // Resolve if SOS is active and older than the safety check
-                    if sosIsActive && sosTimestamp < safetyCheckTimestamp {
+                    print("🔍 Checking SOS alert: \(childSnapshot.key)")
+                    print("   - User: \(sosUserId)")
+                    print("   - Active: \(sosIsActive)")
+                    print("   - Timestamp: \(sosTimestamp)")
+                    
+                    // Check if this SOS is for our user and should be resolved
+                    if sosUserId == userId && sosIsActive && sosTimestamp < safetyCheckTimestamp {
+                        print("✅ Resolving SOS alert: \(childSnapshot.key)")
                         await resolveSOSAlert(alertId: childSnapshot.key)
                         resolvedCount += 1
                     }
@@ -926,10 +1431,14 @@ class GroupViewModel: ObservableObject {
             
             if resolvedCount > 0 {
                 print("✅ Resolved \(resolvedCount) SOS alert(s) for user \(userId)")
+            } else {
+                print("🔍 No SOS alerts needed resolution for user \(userId)")
             }
             
         } catch {
             print("❌ Error checking user SOS alerts: \(error)")
+            print("❌ Error details: \(error.localizedDescription)")
+            // Don't throw - continue with safety check completion
         }
     }
 
@@ -1113,5 +1622,10 @@ class GroupViewModel: ObservableObject {
             database.child("sosAlerts").queryOrdered(byChild: "groupId").queryEqual(toValue: gid).removeObserver(withHandle: handle)
         }
         sosAlertListeners.removeAll()
+        
+        if let handle = pendingInvitationsListener {
+            database.removeObserver(withHandle: handle)
+            pendingInvitationsListener = nil
+        }
     }
 }

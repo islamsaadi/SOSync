@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct GroupsListView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
@@ -60,12 +61,14 @@ struct GroupsListView: View {
                     await groupViewModel.loadUserGroups(userId: userId)
                 }
             }
-            // ✅ FIX: Update sorted groups when raw groups change
             .onChange(of: groupViewModel.groups) { _, newGroups in
                 updateSortedGroups(newGroups)
             }
-            // ✅ FIX: Initial sort when view appears
             .onAppear {
+                print("🔍 Firebase Auth user: \(Auth.auth().currentUser?.uid ?? "NO FIREBASE USER")")
+               print("🔍 Firebase Auth email: \(Auth.auth().currentUser?.email ?? "NO EMAIL")")
+               print("🔍 AuthViewModel user: \(authViewModel.currentUser?.id ?? "NO AUTHVM USER")")
+               print("🔍 AuthViewModel isAuthenticated: \(authViewModel.isAuthenticated)")
                 updateSortedGroups(groupViewModel.groups)
             }
             .sheet(isPresented: $showCreateGroup) {
