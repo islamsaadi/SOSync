@@ -9,6 +9,9 @@ import SwiftUI
 import FirebaseAuth
 
 struct GroupsListView: View {
+    // ✅ FIX: Add navigationTarget binding parameter
+    @Binding var navigationTarget: ContentView.NavigationTarget?
+    
     @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var groupViewModel = GroupViewModel()
     @State private var showCreateGroup = false
@@ -108,6 +111,13 @@ struct GroupsListView: View {
         if sortedGroups != newSortedGroups {
             sortedGroups = newSortedGroups
         }
+    }
+}
+
+// ✅ FIX: Add initializer with default parameter
+extension GroupsListView {
+    init() {
+        self._navigationTarget = .constant(nil)
     }
 }
 
@@ -260,6 +270,8 @@ struct CreateGroupView: View {
 }
 
 #Preview {
-    GroupsListView()
+    ContentView()
         .environmentObject(AuthViewModel())
+        .environmentObject(ThemeManager())
+        .environmentObject(NotificationManager.shared)
 }
