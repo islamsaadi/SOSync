@@ -1,10 +1,3 @@
-//
-//  SafetyCheckResponseView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 24/06/2025.
-//
-
 import SwiftUI
 import CoreLocation
 
@@ -56,8 +49,7 @@ struct SafetyCheckResponseView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Header with better visual hierarchy
-                                            VStack(spacing: 16) {
+                    VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.shield.fill")
                             .font(.system(size: 60))
                             .foregroundStyle(Color.orange)
@@ -103,14 +95,12 @@ struct SafetyCheckResponseView: View {
                         // Already responded - show response summary
                         ResponseSummaryView(response: myResponse!)
                     } else {
-                        // Response options with better UX
                         VStack(spacing: 20) {
                             Text("How are you doing?")
                                 .font(.title2)
                                 .fontWeight(.semibold)
                             
                             VStack(spacing: 16) {
-                                // Safe option - make it prominent
                                 ResponseOptionCard(
                                     title: "I'm Safe",
                                     subtitle: "Everything is okay, no assistance needed",
@@ -122,7 +112,6 @@ struct SafetyCheckResponseView: View {
                                     responseStatus = .safe
                                 }
                                 
-                                // SOS option - clearly marked as emergency
                                 ResponseOptionCard(
                                     title: "SOS - I Need Help",
                                     subtitle: "Emergency situation, require immediate assistance",
@@ -136,7 +125,6 @@ struct SafetyCheckResponseView: View {
                             }
                             .padding(.horizontal)
                             
-                            // Optional message section
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Additional Information (Optional)")
                                     .font(.headline)
@@ -162,7 +150,7 @@ struct SafetyCheckResponseView: View {
                                 .padding(.horizontal)
                             }
                             
-                            // Submit button with loading state
+                            
                             VStack(spacing: 8) {
                                 Button {
                                     submitResponse()
@@ -201,7 +189,7 @@ struct SafetyCheckResponseView: View {
                     Divider()
                         .padding(.horizontal)
                     
-                    // Group members status with enhanced UI
+                    // Group members status
                     GroupMembersStatusView(
                         safetyCheck: safetyCheck,
                         group: group,
@@ -595,7 +583,6 @@ struct MemberStatusRow: View {
     }
 }
 
-// MARK: - Alert Helper for SafetyCheckResponseView
 struct SafetyResponseAlertItem: Identifiable {
     let id = UUID()
     let title: String

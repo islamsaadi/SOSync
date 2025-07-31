@@ -2,29 +2,30 @@
 //  User.swift
 //  SOSync
 //
-//  Created by Islam Saadi on 26/06/2025.
+//  Created by Islam Saadi on 22/06/2025.
 //
 
-
-// User model
 struct User: Identifiable, Codable {
     let id: String
-    var username: String
-    var phoneNumber: String
-    var email: String
-    var fcmToken: String?
-    var groups: [String] = [] // Array of group IDs
-    var createdAt: Double
+    let username: String
+    let phoneNumber: String
+    let email: String
+    let fcmToken: String?
+    let createdAt: Double
     
     var dictionary: [String: Any] {
-        return [
+        var dict: [String: Any] = [
             "id": id,
             "username": username,
             "phoneNumber": phoneNumber,
             "email": email,
-            "fcmToken": fcmToken ?? "",
-            "groups": groups,
             "createdAt": createdAt
         ]
+        
+        if let fcmToken = fcmToken {
+            dict["fcmToken"] = fcmToken
+        }
+        
+        return dict
     }
 }

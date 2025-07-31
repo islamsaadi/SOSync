@@ -1,13 +1,5 @@
-//
-//  SOSView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 26/06/2025.
-//
-
 import SwiftUI
 
-// MARK: - SOS View
 struct SOSView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var groupViewModel = GroupViewModel()
@@ -100,7 +92,7 @@ struct SOSView: View {
         
         Task {
             for group in groupViewModel.groups {
-                await groupViewModel.sendSOSAlert(
+                _ = await groupViewModel.sendSOSAlert(
                     groupId: group.id,
                     userId: userId,
                     location: locationData,

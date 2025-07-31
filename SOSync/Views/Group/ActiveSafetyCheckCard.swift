@@ -72,9 +72,7 @@ struct ActiveSafetyCheckCard: View {
                 loadInitiatorInfo()
             }
     }
-    
-    // MARK: - Broken down sub-views
-    
+        
     private var mainCardContent: some View {
         VStack(spacing: 16) {
             cardHeader
@@ -388,9 +386,7 @@ struct ActiveSafetyCheckCard: View {
             }
         }
     }
-    
-    // MARK: - Helper methods
-    
+        
     private func loadInitiatorInfo() {
         Task {
             do {

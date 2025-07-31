@@ -7,6 +7,7 @@ struct GroupDetailView: View {
     @ObservedObject var groupViewModel: GroupViewModel
     @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var locationManager = LocationManager()
+    @Environment(\.dismiss) var dismiss
     
     @State private var showInviteUser = false
     @State private var showGroupSettings = false
@@ -23,22 +24,17 @@ struct GroupDetailView: View {
         return authViewModel.currentUser?.id ?? ""
     }
     
-    /// Pull the latest version of this group from the VM
+    // Pull the latest version of this group from the VM
     private var currentGroup: SafetyGroup {
         let foundGroup = groupViewModel.groups.first { $0.id == group.id }
         return foundGroup ?? group
     }
     
-    /// Active safety check for this group - ENHANCED logic
+    // Active safety check for this group
     private var activeSafetyCheck: SafetyCheck? {
         let currentGroupId = currentGroup.id
         
-        // First check if group status indicates we should have an active safety check
         let shouldShowSafetyCheck = currentGroup.currentStatus == .checkingStatus
-        
-        if shouldShowSafetyCheck {
-            print("🎯 Group is in checkingStatus - looking for pending safety check")
-        }
         
         let pendingChecks = groupViewModel.safetyChecks.filter { check in
             check.groupId == currentGroupId && check.status == .pending
@@ -46,11 +42,7 @@ struct GroupDetailView: View {
         
         let activeCheck = pendingChecks.first
         
-        if let check = activeCheck {
-            print("🎯 Found active safety check: \(check.id)")
-        } else if shouldShowSafetyCheck {
-            print("⚠️ Group is in checkingStatus but no pending safety check found - forcing reload")
-            
+        if let check = activeCheck, shouldShowSafetyCheck {
             // Force reload safety checks if group says we should have one but we don't
             Task {
                 await groupViewModel.forceReloadSafetyChecks(groupId: currentGroupId)
@@ -60,12 +52,11 @@ struct GroupDetailView: View {
         return activeCheck
     }
     
-    /// Check if current user has responded to active safety check - ENHANCED logic
+    // Check if current user has responded to active safety check
     private var hasRespondedToActiveCheck: Bool {
         guard let activeCheck = activeSafetyCheck else {
             // If group is in checking status but no active check, user hasn't responded
             if currentGroup.currentStatus == .checkingStatus {
-                print("🎯 Group in checkingStatus but no active check - user has not responded")
                 return false
             }
             return false
@@ -73,12 +64,11 @@ struct GroupDetailView: View {
         guard let userId = authViewModel.currentUser?.id else { return false }
         
         let hasResponse = activeCheck.responses[userId] != nil
-        print("🎯 User \(userId) has responded to check \(activeCheck.id): \(hasResponse)")
         
         return hasResponse
     }
     
-    /// Check if current user is the initiator of active safety check
+    // Check if current user is the initiator of active safety check
     private var isInitiatorOfActiveCheck: Bool {
         guard let activeCheck = activeSafetyCheck else { return false }
         guard let userId = authViewModel.currentUser?.id else { return false }
@@ -89,10 +79,9 @@ struct GroupDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // MARK: – Status Card
+
                     GroupStatusCard(group: currentGroup)
                     
-                    // MARK: – Active Safety Check - ENHANCED visibility logic
                     // Show if we have a pending check OR if group status indicates checking
                     if let activeCheck = activeSafetyCheck {
                         ActiveSafetyCheckCard(
@@ -125,16 +114,15 @@ struct GroupDetailView: View {
                         .onAppear {
                             // Force reload when this loading state appears
                             Task {
-                                print("🔄 Safety check loading state appeared - forcing reload")
                                 await groupViewModel.forceReloadSafetyChecks(groupId: currentGroup.id)
                             }
                         }
                     }
 
-                    // MARK: – SOS Alerts
+                    // SOS Alerts
                     sosAlertsSection
                     
-                    // MARK: – Quick Actions - ENHANCED with safety check awareness
+                    // Quick Actions
                     quickActionsSection
                     
                     // Show hint if not enough members
@@ -146,7 +134,7 @@ struct GroupDetailView: View {
                             .padding(.horizontal)
                     }
                     
-                    // MARK: – Members Section
+                    // Members Section
                     membersSection
                 }
                 .padding(.vertical)
@@ -156,8 +144,34 @@ struct GroupDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if isAdmin {
-                        Button { showGroupSettings = true } label: {
-                            Image(systemName: "gearshape")
+                        HStack(spacing: 12) {
+                            // Pending invitations badge
+                            if !groupViewModel.pendingInvitations.isEmpty {
+                                Button {
+                                    loadPendingInvitationsAndShowSettings()
+                                } label: {
+                                    ZStack {
+                                        Image(systemName: "envelope.fill")
+                                            .foregroundStyle(.blue)
+                                        
+                                        // Badge
+                                        Text("\(groupViewModel.pendingInvitations.count)")
+                                            .font(.caption2)
+                                            .foregroundStyle(.white)
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 2)
+                                            .background(Color.red)
+                                            .clipShape(Circle())
+                                            .offset(x: 8, y: -8)
+                                    }
+                                }
+                            }
+                            
+                            Button {
+                                loadPendingInvitationsAndShowSettings()
+                            } label: {
+                                Image(systemName: "gearshape")
+                            }
                         }
                     }
                 }
@@ -166,7 +180,9 @@ struct GroupDetailView: View {
                 InviteUserView(group: currentGroup, groupViewModel: groupViewModel)
             }
             .sheet(isPresented: $showGroupSettings) {
-                GroupSettingsView(group: currentGroup, groupViewModel: groupViewModel)
+                GroupSettingsView(group: currentGroup, groupViewModel: groupViewModel, onGroupDeleted: {
+                    dismiss() // Goes back to groups list
+                })
             }
             .alert("Initiate Safety Check?", isPresented: $showingSafetyCheckAlert) {
                 Button("Cancel", role: .cancel) { }
@@ -198,23 +214,21 @@ struct GroupDetailView: View {
                 await refreshData()
             }
             .onChange(of: groupViewModel.activeSOSAlerts.count) { oldCount, newCount in
-                print("🔄 SOS alerts count changed from \(oldCount) to \(newCount)")
                 if newCount > oldCount {
-                    print("✅ New SOS alert detected!")
+                    print("New SOS alert detected!")
                 }
             }
             .onChange(of: currentGroup.currentStatus) { oldStatus, newStatus in
-                print("🔄 Group status changed from \(oldStatus) to \(newStatus)")
                 
                 if newStatus == .emergency && groupViewModel.activeSOSAlerts.isEmpty {
-                    print("🔄 Group is emergency but no SOS alerts - force reloading")
+                    print("Group is emergency but no SOS alerts - force reloading")
                     Task {
                         await groupViewModel.forceReloadSOSAlerts(groupId: currentGroup.id)
                     }
                 }
                 
                 if newStatus == .checkingStatus && activeSafetyCheck == nil {
-                    print("🔄 Group switched to checkingStatus - force reloading safety checks")
+                    print("Group switched to checkingStatus - force reloading safety checks")
                     Task {
                         await groupViewModel.forceReloadSafetyChecks(groupId: currentGroup.id)
                     }
@@ -222,23 +236,10 @@ struct GroupDetailView: View {
             }
         }
     }
-    
-    // MARK: - View Components
-    
+        
     @ViewBuilder
     private var sosAlertsSection: some View {
         let activeAlerts = groupViewModel.activeSOSAlerts
-        let debugInfo = "Group: \(currentGroup.id), Alerts: \(activeAlerts.count), Status: \(currentGroup.currentStatus)"
-        
-        // Debug info (remove in production)
-        if !activeAlerts.isEmpty {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("DEBUG: \(debugInfo)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-            }
-        }
         
         if !activeAlerts.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
@@ -294,7 +295,7 @@ struct GroupDetailView: View {
             .onAppear {
                 // Force reload SOS alerts when loading state appears
                 Task {
-                    print("🔄 Emergency status but no alerts - forcing SOS reload")
+                    print("Emergency status but no alerts - forcing SOS reload")
                     if let groupId = currentGroup.id as String? {
                         await groupViewModel.forceReloadSOSAlerts(groupId: groupId)
                     }
@@ -368,9 +369,7 @@ struct GroupDetailView: View {
             }
         }
     }
-    
-    // MARK: - Helper Methods
-    
+        
     private func quickAction(icon: String, text: String, color: Color, disabled: Bool = false) -> some View {
         VStack {
             Image(systemName: icon)
@@ -496,15 +495,20 @@ struct GroupDetailView: View {
             // Also force reload SOS alerts
             await groupViewModel.forceReloadSOSAlerts(groupId: currentGroup.id)
             
-            // Debug current state
-            await MainActor.run {
-                let alerts = groupViewModel.activeSOSAlerts
-                print("🎯 Setup complete - Active SOS alerts: \(alerts.count)")
-                print("🎯 Group status: \(currentGroup.currentStatus)")
-                for alert in alerts {
-                    print("🎯 Alert: \(alert.id), User: \(alert.userId), Active: \(alert.isActive)")
-                }
+            // Load pending invitations if admin
+            if isAdmin {
+                await groupViewModel.loadPendingInvitations(groupId: currentGroup.id)
             }
+            
+            // Debug current state
+//            await MainActor.run {
+//                let alerts = groupViewModel.activeSOSAlerts
+//                print("Setup complete - Active SOS alerts: \(alerts.count)")
+//                print("Group status: \(currentGroup.currentStatus)")
+//                for alert in alerts {
+//                    print("Alert: \(alert.id), User: \(alert.userId), Active: \(alert.isActive)")
+//                }
+//            }
         }
         locationManager.requestLocation()
     }
@@ -514,18 +518,29 @@ struct GroupDetailView: View {
         await groupViewModel.loadGroupMembers(group: currentGroup)
         await groupViewModel.forceReloadSafetyChecks(groupId: currentGroup.id)
         await groupViewModel.forceReloadSOSAlerts(groupId: currentGroup.id)
+        
+        // Refresh pending invitations if admin
+        if isAdmin {
+            await groupViewModel.loadPendingInvitations(groupId: currentGroup.id)
+        }
+    }
+    
+    private func loadPendingInvitationsAndShowSettings() {
+        Task {
+            await groupViewModel.loadPendingInvitations(groupId: currentGroup.id)
+            await MainActor.run {
+                showGroupSettings = true
+            }
+        }
     }
 }
 
-// MARK: – Alert Helper
 struct GroupDetailAlertItem: Identifiable {
     let id = UUID()
     let title: String
     let message: String
 }
 
-// ——————————————————————————————————
-// MARK: – Inline Subviews
 struct GroupStatusCard: View {
     let group: SafetyGroup
     

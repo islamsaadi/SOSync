@@ -5,12 +5,10 @@
 //  Created by Islam Saadi on 26/06/2025.
 //
 
-
 import SwiftUI
 import CoreLocation
 import MapKit
 
-// MARK: - Location Manager
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     @Published var lastLocation: CLLocation?

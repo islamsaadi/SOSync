@@ -31,12 +31,45 @@ class AuthViewModel: ObservableObject {
     
     private func setupAuthListener() {
         handle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            print("Auth state changed - User: \(user?.uid ?? "nil")")
             self?.isAuthenticated = user != nil
             if let user = user {
+                print("Calling fetchUserData for: \(user.uid)")
                 self?.fetchUserData(userId: user.uid)
             } else {
+                print("No user - setting currentUser to nil")
                 self?.currentUser = nil
             }
+        }
+    }
+    
+    func loadCurrentUser(uid: String) async {
+        print("loadCurrentUser called with UID: \(uid)")
+        
+        do {
+            let snapshot = try await database.child("users").child(uid).getData()
+            print("Database snapshot exists: \(snapshot.exists())")
+            
+            if snapshot.exists() {
+                print("Raw data: \(snapshot.value ?? "no value")")
+                
+                guard let userData = snapshot.value as? [String: Any] else {
+                    print("Could not cast to [String: Any]")
+                    return
+                }
+                
+                let jsonData = try JSONSerialization.data(withJSONObject: userData)
+                let user = try JSONDecoder().decode(User.self, from: jsonData)
+                
+                await MainActor.run {
+                    self.currentUser = user
+                    print("User loaded successfully: \(user.username)")
+                }
+            } else {
+                print("User data doesn't exist in database")
+            }
+        } catch {
+            print("Error loading user: \(error)")
         }
     }
     
@@ -120,15 +153,34 @@ class AuthViewModel: ObservableObject {
     }
     
     private func fetchUserData(userId: String) {
+        
         database.child("users").child(userId).observe(.value) { [weak self] snapshot in
-            guard let value = snapshot.value as? [String: Any],
-                  let userData = try? JSONSerialization.data(withJSONObject: value),
-                  let user = try? JSONDecoder().decode(User.self, from: userData) else {
+            
+            guard let value = snapshot.value as? [String: Any] else {
+                print("Could not cast snapshot.value to [String: Any]")
+                print("Actual type: \(type(of: snapshot.value))")
                 return
             }
             
+            print("🔍 Successfully cast to [String: Any]")
+            
+            guard let userData = try? JSONSerialization.data(withJSONObject: value) else {
+                print("Could not serialize to JSON data")
+                return
+            }
+            
+            print("Successfully serialized to JSON")
+            
+            guard let user = try? JSONDecoder().decode(User.self, from: userData) else {
+                print("Could not decode User object")
+                return
+            }
+            
+            print("Successfully decoded user: \(user.username)")
+            
             DispatchQueue.main.async {
                 self?.currentUser = user
+                print("Set currentUser on main thread")
                 
                 // Update FCM token if needed
                 if let fcmToken = UserDefaults.standard.string(forKey: "FCMToken"),
@@ -144,7 +196,6 @@ class AuthViewModel: ObservableObject {
         database.child("users").child(userId).child("fcmToken").setValue(token)
     }
     
-    // MARK: - Search User with Validation
     func validateSearchQuery(_ query: String) -> SearchValidationResult {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         
@@ -244,7 +295,6 @@ class AuthViewModel: ObservableObject {
     }
 }
 
-// MARK: - Helper Types
 enum SearchValidationResult {
     case valid(SearchType)
     case invalid(String)

@@ -1,13 +1,5 @@
-//
-//  ProfileView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 26/06/2025.
-//
-
 import SwiftUI
 
-// MARK: - Profile View
 struct ProfileView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @EnvironmentObject var themeManager: ThemeManager

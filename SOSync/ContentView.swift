@@ -3,10 +3,42 @@ import FirebaseAuth
 
 struct ContentView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var notificationManager: NotificationManager
+    @State private var selectedTab = 0
+    @State private var navigationTarget: NavigationTarget?
+    
+    enum NavigationTarget: Equatable {
+        case safetyCheck(groupId: String)
+        case sosAlert(groupId: String)
+        case invites
+        case group(groupId: String)
+    }
     
     var body: some View {
         if authViewModel.isAuthenticated {
-            MainTabView()
+            MainTabView(selectedTab: $selectedTab, navigationTarget: $navigationTarget)
+                .onReceive(NotificationCenter.default.publisher(for: Notification.Name("NavigateToSafetyCheck"))) { notification in
+                    if let groupId = notification.userInfo?["groupId"] as? String {
+                        navigationTarget = .safetyCheck(groupId: groupId)
+                        selectedTab = 0 // Groups tab
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: Notification.Name("NavigateToSOSAlert"))) { notification in
+                    if let groupId = notification.userInfo?["groupId"] as? String {
+                        navigationTarget = .sosAlert(groupId: groupId)
+                        selectedTab = 0 // Groups tab
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: Notification.Name("NavigateToInvites"))) { _ in
+                    navigationTarget = .invites
+                    selectedTab = 1 // Invites tab
+                }
+                .onReceive(NotificationCenter.default.publisher(for: Notification.Name("NavigateToGroup"))) { notification in
+                    if let groupId = notification.userInfo?["groupId"] as? String {
+                        navigationTarget = .group(groupId: groupId)
+                        selectedTab = 0 // Groups tab
+                    }
+                }
         } else {
             AuthenticationView()
         }
@@ -14,25 +46,28 @@ struct ContentView: View {
 }
 
 struct MainTabView: View {
-    @State private var selectedTab = 0
+    @Binding var selectedTab: Int
+    @Binding var navigationTarget: ContentView.NavigationTarget?
     @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var invitesVM = InvitationsViewModel(
-      userId: Auth.auth().currentUser?.uid ?? ""
+        userId: Auth.auth().currentUser?.uid ?? ""
     )
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            GroupsListView()
+            GroupsListView(navigationTarget: $navigationTarget)
                 .tabItem {
                     Label("Groups", systemImage: "person.3.fill")
                 }
                 .tag(0)
             
             InvitationsView()
-                    .environmentObject(invitesVM)
-                    .tabItem { Label("Invites", systemImage: "envelope.fill") }
-                    .badge(invitesVM.pendingInvitations.count)
-                    .tag(1)
+                .environmentObject(invitesVM)
+                .tabItem {
+                    Label("Invites", systemImage: "envelope.fill")
+                }
+                .badge(invitesVM.pendingInvitations.count)
+                .tag(1)
             
             SOSView()
                 .tabItem {
@@ -53,11 +88,24 @@ struct MainTabView: View {
                 }
             }
         }
+        .onChange(of: navigationTarget) { oldValue, newValue in
+            handleNavigationTarget(newValue)
+        }
     }
-}
-
-#Preview {
-    ContentView()
-        .environmentObject(AuthViewModel())
-        .environmentObject(ThemeManager())
+    
+    private func handleNavigationTarget(_ target: ContentView.NavigationTarget?) {
+        guard let target = target else { return }
+        
+        switch target {
+        case .invites:
+            selectedTab = 1
+        case .safetyCheck(let groupId), .sosAlert(let groupId), .group(let groupId):
+            selectedTab = 0
+        }
+        
+        // Clear the navigation target after handling
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            navigationTarget = nil
+        }
+    }
 }

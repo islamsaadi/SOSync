@@ -7,7 +7,6 @@
 import Foundation
 import CoreLocation
 
-// Location model
 struct LocationData: Codable {
     let latitude: Double
     let longitude: Double

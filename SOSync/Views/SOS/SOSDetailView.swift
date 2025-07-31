@@ -1,13 +1,5 @@
-//
-//  SOSDetailView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 26/06/2025.
-//
-
 import SwiftUI
 
-// MARK: - SOS Detail View
 struct SOSDetailView: View {
     let group: SafetyGroup
     @ObservedObject var groupViewModel: GroupViewModel
@@ -41,8 +33,11 @@ struct SOSDetailView: View {
                         Label("Send SOS Alert", systemImage: "exclamationmark.triangle.fill")
                     }
                 }
-                .buttonStyle(PrimaryButtonStyle())
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .foregroundStyle(.white)
                 .background(Color.red)
+                .cornerRadius(10)
                 .padding(.horizontal)
                 .disabled(isSending)
                 

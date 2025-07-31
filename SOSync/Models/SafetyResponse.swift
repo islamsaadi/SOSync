@@ -5,8 +5,6 @@
 //  Created by Islam Saadi on 26/06/2025.
 //
 
-
-// Safety Response model
 struct SafetyResponse: Codable {
     let userId: String
     let status: SafetyResponseStatus

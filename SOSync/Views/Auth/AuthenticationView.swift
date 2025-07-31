@@ -2,7 +2,7 @@
 //  AuthenticationView.swift
 //  SOSync
 //
-//  Created by Islam Saadi on 26/06/2025.
+//  Created by Islam Saadi on 22/06/2025.
 //
 
 import SwiftUI
@@ -51,12 +51,12 @@ struct SignInView: View {
                         .textFieldStyle(RoundedTextFieldStyle())
                         .textInputAutocapitalization(.never)
                         .keyboardType(.emailAddress)
-                        .textContentType(.emailAddress) // ✅ Fix for password autofill
+                        .textContentType(.emailAddress)
                         .autocorrectionDisabled(true)
                     
                     SecureField("Password", text: $password)
                         .textFieldStyle(RoundedTextFieldStyle())
-                        .textContentType(.password) // ✅ Fix for password autofill
+                        .textContentType(.password)
                 }
                 .padding(.horizontal)
                 
@@ -66,7 +66,7 @@ struct SignInView: View {
                         .font(.caption)
                         .foregroundStyle(.red)
                         .padding(.horizontal)
-                        .fixedSize(horizontal: false, vertical: true) // ✅ Fix for text layout
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 
                 // Sign in button
@@ -85,7 +85,7 @@ struct SignInView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 50) // ✅ Fixed height to prevent layout issues
+                    .frame(height: 50)
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(email.isEmpty || password.isEmpty || authViewModel.isLoading)
@@ -108,7 +108,6 @@ struct SignInView: View {
             }
             .navigationBarHidden(true)
             .onTapGesture {
-                // ✅ Dismiss keyboard when tapping outside
                 hideKeyboard()
             }
         }
@@ -125,7 +124,6 @@ struct SignUpView: View {
     @State private var username = ""
     @State private var phoneNumber = ""
     
-    // ✅ Add focus state for better UX
     @FocusState private var focusedField: Field?
     
     enum Field {
@@ -167,7 +165,7 @@ struct SignUpView: View {
                         TextField("Username (unique)", text: $username)
                             .textFieldStyle(RoundedTextFieldStyle())
                             .textInputAutocapitalization(.never)
-                            .textContentType(.username) // ✅ Proper content type
+                            .textContentType(.username)
                             .autocorrectionDisabled(true)
                             .focused($focusedField, equals: .username)
                             .onSubmit { focusedField = .email }
@@ -176,7 +174,7 @@ struct SignUpView: View {
                             .textFieldStyle(RoundedTextFieldStyle())
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
-                            .textContentType(.emailAddress) // ✅ Proper content type
+                            .textContentType(.emailAddress)
                             .autocorrectionDisabled(true)
                             .focused($focusedField, equals: .email)
                             .onSubmit { focusedField = .phone }
@@ -184,19 +182,19 @@ struct SignUpView: View {
                         TextField("Phone Number", text: $phoneNumber)
                             .textFieldStyle(RoundedTextFieldStyle())
                             .keyboardType(.phonePad)
-                            .textContentType(.telephoneNumber) // ✅ Proper content type
+                            .textContentType(.telephoneNumber)
                             .focused($focusedField, equals: .phone)
                             .onSubmit { focusedField = .password }
                         
                         SecureField("Password", text: $password)
                             .textFieldStyle(RoundedTextFieldStyle())
-                            .textContentType(.newPassword) // ✅ Proper content type for new password
+                            .textContentType(.newPassword)
                             .focused($focusedField, equals: .password)
                             .onSubmit { focusedField = .confirmPassword }
                         
                         SecureField("Confirm Password", text: $confirmPassword)
                             .textFieldStyle(RoundedTextFieldStyle())
-                            .textContentType(.newPassword) // ✅ Proper content type
+                            .textContentType(.newPassword)
                             .focused($focusedField, equals: .confirmPassword)
                             .onSubmit { focusedField = nil }
                     }
@@ -208,7 +206,7 @@ struct SignUpView: View {
                             .font(.caption)
                             .foregroundStyle(.red)
                             .padding(.horizontal)
-                            .fixedSize(horizontal: false, vertical: true) // ✅ Fix for text layout
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     
                     // Validation message
@@ -216,7 +214,7 @@ struct SignUpView: View {
                         Text("Passwords don't match")
                             .font(.caption)
                             .foregroundStyle(.red)
-                            .fixedSize(horizontal: false, vertical: true) // ✅ Fix for text layout
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     
                     // Sign up button
@@ -240,7 +238,7 @@ struct SignUpView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: 50) // ✅ Fixed height to prevent layout issues
+                        .frame(height: 50)
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .disabled(
@@ -270,14 +268,12 @@ struct SignUpView: View {
             }
             .navigationBarHidden(true)
             .onTapGesture {
-                // ✅ Dismiss keyboard when tapping outside
                 hideKeyboard()
             }
         }
     }
 }
 
-// ✅ Helper extension to dismiss keyboard
 extension View {
     func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -288,13 +284,13 @@ extension View {
 struct RoundedTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
-            .padding(.vertical, 12) // ✅ Specific vertical padding
-            .padding(.horizontal, 16) // ✅ Specific horizontal padding
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
             .background(Color(.secondarySystemBackground))
             .cornerRadius(10)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color(.separator), lineWidth: 0.5) // ✅ Subtle border
+                    .stroke(Color(.separator), lineWidth: 0.5)
             )
     }
 }
@@ -303,13 +299,13 @@ struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(maxWidth: .infinity)
-            .frame(height: 50) // ✅ Fixed height for consistency
+            .frame(height: 50)
             .background(
                 configuration.isPressed ? Color.blue.opacity(0.8) : Color.blue
             )
             .foregroundStyle(.white)
             .cornerRadius(10)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1) // ✅ Reduced scale for better feel
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }

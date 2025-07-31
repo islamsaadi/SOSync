@@ -1,11 +1,3 @@
-//
-//  InvitationsView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 26/06/2025.
-//
-
-
 import SwiftUI
 import FirebaseAuth
 
@@ -28,7 +20,7 @@ struct InvitationsView: View {
                     .listRowBackground(Color.clear)
                 } else {
                     ForEach(viewModel.pendingInvitations) { invitation in
-                        InvitationRowView(
+                        EnhancedInvitationRowView(
                             invitation: invitation,
                             onAccept: {
                                 acceptInvitation(invitation)
@@ -78,7 +70,7 @@ struct InvitationsView: View {
     }
 }
 
-struct InvitationRowView: View {
+struct EnhancedInvitationRowView: View {
     let invitation: GroupInvitation
     let onAccept: () -> Void
     let onDecline: () -> Void
@@ -94,10 +86,19 @@ struct InvitationRowView: View {
                     Text(invitation.groupName)
                         .font(.headline)
                     
-                    if let invitedBy = invitation.invitedByUsername {
-                        Text("Invited by @\(invitedBy)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    // Enhanced inviter information
+                    VStack(alignment: .leading, spacing: 2) {
+                        if let invitedBy = invitation.invitedByUsername {
+                            Text("Invited by @\(invitedBy)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        if let inviterPhone = invitation.invitedByPhone {
+                            Text("Phone: \(inviterPhone)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     
                     Text("Invited \(Date(timeIntervalSince1970: invitation.timestamp), style: .relative) ago")
