@@ -973,9 +973,9 @@ class GroupViewModel: ObservableObject {
                     let sortedChecks = checks.sorted { $0.timestamp > $1.timestamp }
                     self.safetyChecks = sortedChecks
                     
-                    print("🎯 LISTENER UPDATED safetyChecks: \(sortedChecks.count) total for group \(groupId)")
+                    print("LISTENER UPDATED safetyChecks: \(sortedChecks.count) total for group \(groupId)")
                     if let recent = sortedChecks.first {
-                        print("🎯 Most recent check: \(recent.id), status: \(recent.status)")
+                        print("Most recent check: \(recent.id), status: \(recent.status)")
                     }
                 }
             }
