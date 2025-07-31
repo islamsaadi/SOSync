@@ -1,10 +1,3 @@
-//
-//  InviteUserView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 22/06/2025.
-//
-
 import SwiftUI
 
 struct InviteUserView: View {
@@ -123,7 +116,6 @@ struct InviteUserView: View {
                     .padding(.horizontal)
                 }
                 
-                // Helper text
                 VStack(alignment: .leading, spacing: 8) {
                     Text("How to search:")
                         .font(.caption)
@@ -201,7 +193,6 @@ struct InviteUserView: View {
               let currentUserId = authViewModel.currentUser?.id else { return }
         
         Task {
-            // Enhanced invitation with inviter information
             await groupViewModel.inviteUserToGroup(
                 groupId: group.id,
                 invitedUserId: user.id,

@@ -1,13 +1,5 @@
-//
-//  SOSDetailView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 26/06/2025.
-//
-
 import SwiftUI
 
-// MARK: - SOS Detail View
 struct SOSDetailView: View {
     let group: SafetyGroup
     @ObservedObject var groupViewModel: GroupViewModel

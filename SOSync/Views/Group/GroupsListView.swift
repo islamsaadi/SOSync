@@ -2,14 +2,14 @@
 //  GroupsListView.swift
 //  SOSync
 //
-//  Created by Islam Saadi on 22/06/2025.
+//  Created by Islam Saadi on 25/06/2025.
 //
 
 import SwiftUI
 import FirebaseAuth
 
 struct GroupsListView: View {
-    // ✅ FIX: Add navigationTarget binding parameter
+    // Add navigationTarget binding parameter
     @Binding var navigationTarget: ContentView.NavigationTarget?
     
     @EnvironmentObject var authViewModel: AuthViewModel
@@ -17,7 +17,7 @@ struct GroupsListView: View {
     @State private var showCreateGroup = false
     @State private var selectedGroup: SafetyGroup?
     
-    // ✅ FIX: Cache sorted groups to avoid recomputation on every view refresh
+    // Cache sorted groups to avoid recomputation on every view refresh
     @State private var sortedGroups: [SafetyGroup] = []
 
     var body: some View {
@@ -36,7 +36,7 @@ struct GroupsListView: View {
                     }
                     .listRowBackground(Color.clear)
                 } else {
-                    // ✅ Use cached sorted groups
+                    // Use cached sorted groups
                     ForEach(sortedGroups) { group in
                         GroupRowView(group: group)
                             .onTapGesture {
@@ -68,10 +68,6 @@ struct GroupsListView: View {
                 updateSortedGroups(newGroups)
             }
             .onAppear {
-                print("🔍 Firebase Auth user: \(Auth.auth().currentUser?.uid ?? "NO FIREBASE USER")")
-               print("🔍 Firebase Auth email: \(Auth.auth().currentUser?.email ?? "NO EMAIL")")
-               print("🔍 AuthViewModel user: \(authViewModel.currentUser?.id ?? "NO AUTHVM USER")")
-               print("🔍 AuthViewModel isAuthenticated: \(authViewModel.isAuthenticated)")
                 updateSortedGroups(groupViewModel.groups)
             }
             .sheet(isPresented: $showCreateGroup) {
@@ -84,7 +80,6 @@ struct GroupsListView: View {
         }
     }
     
-    // ✅ FIX: Separate function to update sorted groups efficiently
     private func updateSortedGroups(_ groups: [SafetyGroup]) {
         let newSortedGroups = groups.sorted { group1, group2 in
             // Sort by status priority (higher priority number = shown first)
@@ -107,40 +102,37 @@ struct GroupsListView: View {
             return group1.name.lowercased() < group2.name.lowercased()
         }
         
-        // ✅ Only update if the sorted order actually changed
+        // Only update if the sorted order actually changed
         if sortedGroups != newSortedGroups {
             sortedGroups = newSortedGroups
         }
     }
 }
 
-// ✅ FIX: Add initializer with default parameter
 extension GroupsListView {
     init() {
         self._navigationTarget = .constant(nil)
     }
 }
 
-// ✅ FIX: Optimize GroupRowView with better performance
 struct GroupRowView: View {
     let group: SafetyGroup
     
-    // ✅ Cache computed properties to avoid repeated calculations
     private var statusColor: Color {
         switch group.currentStatus {
-        case .normal:          return .gray
-        case .checkingStatus:  return .orange
-        case .allSafe:         return .green
-        case .emergency:       return .red
+            case .normal:          return .gray
+            case .checkingStatus:  return .orange
+            case .allSafe:         return .green
+            case .emergency:       return .red
         }
     }
 
     private var statusIcon: String {
         switch group.currentStatus {
-        case .normal:          return "shield"
-        case .checkingStatus:  return "clock.arrow.circlepath"
-        case .allSafe:         return "checkmark.shield.fill"
-        case .emergency:       return "exclamationmark.triangle.fill"
+            case .normal:          return "shield"
+            case .checkingStatus:  return "clock.arrow.circlepath"
+            case .allSafe:         return "checkmark.shield.fill"
+            case .emergency:       return "exclamationmark.triangle.fill"
         }
     }
     
@@ -267,11 +259,4 @@ struct CreateGroupView: View {
             }
         }
     }
-}
-
-#Preview {
-    ContentView()
-        .environmentObject(AuthViewModel())
-        .environmentObject(ThemeManager())
-        .environmentObject(NotificationManager.shared)
 }

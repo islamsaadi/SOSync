@@ -141,16 +141,11 @@ class InvitationsViewModel: ObservableObject {
     
     func acceptInvitation(_ invitation: GroupInvitation, userId: String) async {
         do {
-            print("🔍 ACCEPTING INVITATION:")
-            print("🔍 Group ID: \(invitation.groupId)")
-            print("🔍 User ID: \(userId)")
-            
             let groupRef = database.child("groups").child(invitation.groupId)
             
             // STEP 1: Get current group data
             let groupSnapshot = try await groupRef.getData()
             guard let groupData = groupSnapshot.value as? [String: Any] else {
-                print("❌ Could not get group data")
                 errorMessage = "Could not access group data"
                 return
             }
@@ -167,63 +162,48 @@ class InvitationsViewModel: ObservableObject {
             // Update pendingMembers in Firebase
             if pendingMembers.isEmpty {
                 try await groupRef.child("pendingMembers").removeValue()
-                print("✅ Removed pendingMembers field (was empty)")
             } else {
                 try await groupRef.child("pendingMembers").setValue(pendingMembers)
-                print("✅ Updated pendingMembers in Firebase")
             }
             
             // STEP 3: Update members
             var members = groupData["members"] as? [String] ?? []
-            print("🔍 Before - Members: \(members)")
             
             if !members.contains(userId) {
                 members.append(userId)
-                print("🔍 Added user to members: \(userId)")
-                
                 try await groupRef.child("members").setValue(members)
-                print("✅ Updated members in Firebase")
             } else {
-                print("🔍 User already in members")
+                print("User already in members")
             }
-            
-            print("🔍 Final members: \(members)")
-            
+                        
             // STEP 4: Add group to user's groups
             let userGroupsRef = database.child("users").child(userId).child("groups")
             let userGroupsSnapshot = try await userGroupsRef.getData()
             var userGroups = userGroupsSnapshot.value as? [String] ?? []
-            
-            print("🔍 User's current groups: \(userGroups)")
-            
+                        
             if !userGroups.contains(invitation.groupId) {
                 userGroups.append(invitation.groupId)
                 try await userGroupsRef.setValue(userGroups)
-                print("✅ Added group to user's groups: \(invitation.groupId)")
             } else {
-                print("🔍 Group already in user's groups")
+                print("Group already in user's groups")
             }
             
             // STEP 5: Remove invitation
             try await database.child("invitations").child(invitation.id).removeValue()
-            print("✅ Removed invitation: \(invitation.id)")
             
             // STEP 6: Remove from local list
             pendingInvitations.removeAll { $0.id == invitation.id }
-            print("✅ Removed from local pending invitations")
-            
-            print("🎉 INVITATION ACCEPTANCE COMPLETED SUCCESSFULLY!")
-            
+                        
         } catch {
             errorMessage = error.localizedDescription
-            print("❌ Error accepting invitation: \(error)")
-            print("❌ Error details: \(error.localizedDescription)")
+            print("Error accepting invitation: \(error)")
+            print("Error details: \(error.localizedDescription)")
         }
     }
     
     func declineInvitation(_ invitation: GroupInvitation, userId: String) async {
         do {
-            // Remove from pendingMembers only
+            // Remove from pendingMembers
             let pendingRef = database.child("groups").child(invitation.groupId).child("pendingMembers")
             let pendingSnapshot = try await pendingRef.getData()
             var pendingMembers = pendingSnapshot.value as? [String] ?? []

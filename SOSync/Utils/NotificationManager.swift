@@ -22,8 +22,6 @@ class NotificationManager: ObservableObject {
         checkNotificationPermission()
     }
     
-    // MARK: - Permission Management
-    
     func requestNotificationPermission() async -> Bool {
         let center = UNUserNotificationCenter.current()
         
@@ -37,14 +35,14 @@ class NotificationManager: ObservableObject {
                 await MainActor.run {
                     UIApplication.shared.registerForRemoteNotifications()
                 }
-                print("✅ Notification permission granted")
+                print("Notification permission granted")
             } else {
-                print("❌ Notification permission denied")
+                print("Notification permission denied")
             }
             
             return granted
         } catch {
-            print("❌ Error requesting notification permission: \(error)")
+            print("Error requesting notification permission: \(error)")
             return false
         }
     }
@@ -57,11 +55,9 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    // MARK: - FCM Token Management
-    
     func updateUserFCMToken(_ token: String) async {
         guard let userId = Auth.auth().currentUser?.uid else {
-            print("❌ No authenticated user found")
+            print("No authenticated user found")
             return
         }
         
@@ -72,18 +68,16 @@ class NotificationManager: ObservableObject {
                 .child("fcmToken")
                 .setValue(token)
             
-            print("✅ FCM token updated for user: \(userId)")
+            print("FCM token updated for user: \(userId)")
         } catch {
-            print("❌ Error updating FCM token: \(error)")
+            print("Error updating FCM token: \(error)")
         }
     }
-    
-    // MARK: - Send Notifications
     
     func sendSafetyCheckNotification(to groupId: String, initiatedBy userId: String) async {
         await sendNotificationToGroup(
             groupId: groupId,
-            title: "🔔 Safety Check",
+            title: "Safety Check",
             body: "Please confirm if you are safe",
             data: [
                 "type": "safety_check",
@@ -100,7 +94,7 @@ class NotificationManager: ObservableObject {
             let userSnapshot = try await database.child("users").child(userId).getData()
             guard let userData = userSnapshot.value as? [String: Any],
                   let username = userData["username"] as? String else {
-                print("❌ Could not get user info for SOS alert")
+                print("Could not get user info for SOS alert")
                 return
             }
             
@@ -108,7 +102,7 @@ class NotificationManager: ObservableObject {
             
             await sendNotificationToGroup(
                 groupId: groupId,
-                title: "🚨 SOS ALERT",
+                title: "SOS ALERT",
                 body: "\(username) needs help! Location: \(locationText)",
                 data: [
                     "type": "sos_alert",
@@ -120,14 +114,14 @@ class NotificationManager: ObservableObject {
                 isUrgent: true
             )
         } catch {
-            print("❌ Error sending SOS notification: \(error)")
+            print("Error sending SOS notification: \(error)")
         }
     }
     
     func sendGroupInviteNotification(to userId: String, groupName: String, inviterName: String) async {
         await sendNotificationToUser(
             userId: userId,
-            title: "📨 Group Invitation",
+            title: "Group Invitation",
             body: "\(inviterName) invited you to join '\(groupName)'",
             data: [
                 "type": "group_invite",
@@ -152,8 +146,6 @@ class NotificationManager: ObservableObject {
         )
     }
     
-    // MARK: - Private Helper Methods
-    
     private func sendNotificationToGroup(
         groupId: String,
         title: String,
@@ -167,7 +159,7 @@ class NotificationManager: ObservableObject {
             let groupSnapshot = try await database.child("groups").child(groupId).getData()
             guard let groupData = groupSnapshot.value as? [String: Any],
                   let members = groupData["members"] as? [String] else {
-                print("❌ Could not get group members for notification")
+                print("Could not get group members for notification")
                 return
             }
             
@@ -187,10 +179,10 @@ class NotificationManager: ObservableObject {
                 )
             }
             
-            print("✅ Sent notification to \(targetMembers.count) group members")
+            print("Sent notification to \(targetMembers.count) group members")
             
         } catch {
-            print("❌ Error sending group notification: \(error)")
+            print("Error sending group notification: \(error)")
         }
     }
     
@@ -210,7 +202,7 @@ class NotificationManager: ObservableObject {
                 .getData()
             
             guard let fcmToken = tokenSnapshot.value as? String else {
-                print("❌ No FCM token found for user: \(userId)")
+                print("No FCM token found for user: \(userId)")
                 return
             }
             
@@ -231,23 +223,21 @@ class NotificationManager: ObservableObject {
                 "content_available": true
             ]
             
-            // Send via Firebase Cloud Functions or your backend
             await sendPushNotification(payload: payload)
             
         } catch {
-            print("❌ Error sending notification to user \(userId): \(error)")
+            print("Error sending notification to user \(userId): \(error)")
         }
     }
     
     private func sendPushNotification(payload: [String: Any]) async {
-        // This should be sent through your backend/Cloud Functions
-        // For now, we'll save it to Firebase for a Cloud Function to process
+        // saving to db, cloud function will process
         do {
             let notificationRef = database.child("pendingNotifications").childByAutoId()
             try await notificationRef.setValue(payload)
-            print("✅ Notification queued for processing")
+            print("Notification queued for processing")
         } catch {
-            print("❌ Error queuing notification: \(error)")
+            print("Error queuing notification: \(error)")
         }
     }
     
@@ -264,32 +254,4 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    // MARK: - Local Notifications (for testing/offline)
-    
-    func scheduleLocalNotification(
-        title: String,
-        body: String,
-        userInfo: [String: Any] = [:],
-        delay: TimeInterval = 1
-    ) async {
-        let content = UNMutableNotificationContent()
-        content.title = title
-        content.body = body
-        content.sound = .default
-        content.userInfo = userInfo
-        
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: trigger
-        )
-        
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-            print("✅ Local notification scheduled")
-        } catch {
-            print("❌ Error scheduling local notification: \(error)")
-        }
-    }
 }

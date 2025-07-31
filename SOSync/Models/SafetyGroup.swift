@@ -5,7 +5,6 @@
 //  Created by Islam Saadi on 26/06/2025.
 //
 
-
 struct SafetyGroup: Identifiable, Codable, Hashable {
     let id: String
     var name: String
@@ -68,7 +67,7 @@ enum SafetyGroupStatus: String, Codable, CaseIterable {
         }
     }
     
-    // ✅ Priority for sorting (higher = more important = shown first)
+    // Priority for sorting (higher = more important = shown first)
     var priority: Int {
         switch self {
         case .emergency:     return 4  // Most important

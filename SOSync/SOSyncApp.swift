@@ -57,17 +57,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         // Request permission (will be handled by NotificationManager in ContentView)
         application.registerForRemoteNotifications()
         
-        print("✅ Notification setup completed")
     }
     
-    // MARK: - Remote Notification Registration
     
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        print("✅ Device registered for remote notifications")
-        print("📱 Device token: \(deviceToken.map { String(format: "%02.2hhx", $0) }.joined())")
+        print("Device registered for remote notifications")
+        print("Device token: \(deviceToken.map { String(format: "%02.2hhx", $0) }.joined())")
         
         // Set APNS token for Firebase Messaging
         Messaging.messaging().apnsToken = deviceToken
@@ -77,20 +75,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
+        print("Failed to register for remote notifications: \(error.localizedDescription)")
     }
     
-    // MARK: - MessagingDelegate
     
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        print("🔥 Firebase registration token received")
+        print("Firebase registration token received")
         
         guard let token = fcmToken else {
-            print("❌ FCM token is nil")
+            print("FCM token is nil")
             return
         }
         
-        print("📝 FCM Token: \(token)")
+        print("FCM Token: \(token)")
         
         // Store token locally
         UserDefaults.standard.set(token, forKey: "FCMToken")
@@ -101,19 +98,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         }
     }
     
-    // ✅ FIX: Remove MessagingRemoteMessage (not available in iOS Firebase SDK)
-    // The messaging(_:didReceive:) method is for Android only
-    
-    // MARK: - UNUserNotificationCenterDelegate
-    
+        
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         let userInfo = notification.request.content.userInfo
-        print("📱 Notification received while app is in foreground")
-        print("📋 UserInfo: \(userInfo)")
+        print("Notification received while app is in foreground")
+        print("UserInfo: \(userInfo)")
         
         // Determine presentation options based on notification type
         let options = getPresentationOptions(for: userInfo)
@@ -126,17 +119,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
-        print("👆 User tapped notification")
-        print("📋 UserInfo: \(userInfo)")
+        
+        print("User tapped notification")
+        print("UserInfo: \(userInfo)")
         
         // Handle notification tap
         handleNotificationTap(userInfo: userInfo)
         
         completionHandler()
     }
-    
-    // MARK: - Notification Handling
-    
+        
     private func getPresentationOptions(for userInfo: [AnyHashable: Any]) -> UNNotificationPresentationOptions {
         guard let notificationType = userInfo["type"] as? String else {
             return [.banner, .badge, .sound]
@@ -159,11 +151,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
     
     private func handleNotificationTap(userInfo: [AnyHashable: Any]) {
         guard let notificationType = userInfo["type"] as? String else {
-            print("❌ No notification type in tapped notification")
+            print("No notification type in tapped notification")
             return
         }
         
-        print("🎯 Handling notification tap for type: \(notificationType)")
+        print("Handling notification tap for type: \(notificationType)")
         
         // Use NotificationCenter to communicate with SwiftUI views
         let notificationName = Notification.Name("HandleNotificationTap")
@@ -184,15 +176,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         case "group_status":
             navigateToGroup(userInfo)
         default:
-            print("⚠️ Unknown notification type for navigation: \(notificationType)")
+            print("Unknown notification type for navigation: \(notificationType)")
         }
     }
-    
-    // MARK: - Navigation Helpers
-    
+        
     private func navigateToSafetyCheck(_ userInfo: [AnyHashable: Any]) {
         if let groupId = userInfo["groupId"] as? String {
-            print("🎯 Navigate to safety check for group: \(groupId)")
+            
+            print("Navigate to safety check for group: \(groupId)")
             
             // Post notification for SwiftUI to handle navigation
             NotificationCenter.default.post(
@@ -205,7 +196,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
     
     private func navigateToSOSAlert(_ userInfo: [AnyHashable: Any]) {
         if let groupId = userInfo["groupId"] as? String {
-            print("🎯 Navigate to SOS alert for group: \(groupId)")
+            
+            print("Navigate to SOS alert for group: \(groupId)")
             
             NotificationCenter.default.post(
                 name: Notification.Name("NavigateToSOSAlert"),
@@ -216,7 +208,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
     }
     
     private func navigateToGroupInvites(_ userInfo: [AnyHashable: Any]) {
-        print("🎯 Navigate to group invites")
+        
+        print("Navigate to group invites")
         
         NotificationCenter.default.post(
             name: Notification.Name("NavigateToInvites"),
@@ -227,7 +220,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
     
     private func navigateToGroup(_ userInfo: [AnyHashable: Any]) {
         if let groupId = userInfo["groupId"] as? String {
-            print("🎯 Navigate to group: \(groupId)")
+            
+            print("Navigate to group: \(groupId)")
             
             NotificationCenter.default.post(
                 name: Notification.Name("NavigateToGroup"),

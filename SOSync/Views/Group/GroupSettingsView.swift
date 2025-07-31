@@ -46,7 +46,6 @@ struct GroupSettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                // MARK: - Group Information Section
                 Section("Group Information") {
                     HStack {
                         Image(systemName: "person.3.fill")
@@ -83,7 +82,6 @@ struct GroupSettingsView: View {
                     }
                 }
                 
-                // MARK: - Settings Section
                 Section("Settings") {
                     // Safety Check Interval
                     HStack {
@@ -115,7 +113,6 @@ struct GroupSettingsView: View {
                         }
                     }
                     
-                    // SOS Interval
                     HStack {
                         Image(systemName: "exclamationmark.triangle")
                             .foregroundStyle(.red)
@@ -145,7 +142,6 @@ struct GroupSettingsView: View {
                         }
                     }
                     
-                    // Edit Intervals Button (Admin Only)
                     if isAdmin {
                         HStack {
                             Spacer()
@@ -172,7 +168,6 @@ struct GroupSettingsView: View {
                     }
                 }
                 
-                // MARK: - Pending Invitations Section (Admin Only)
                 if isAdmin {
                     Section("Pending Invitations") {
                         Button {
@@ -203,7 +198,6 @@ struct GroupSettingsView: View {
                     }
                 }
                 
-                // MARK: - Members Section
                 Section("Members") {
                     ForEach(groupViewModel.groupMembers) { member in
                         HStack {
@@ -260,7 +254,6 @@ struct GroupSettingsView: View {
                     }
                 }
                 
-                // MARK: - Danger Zone (Admin Only)
                 if isAdmin {
                     Section("Danger Zone") {
                         Button {
@@ -355,9 +348,7 @@ struct GroupSettingsView: View {
             }
         }
     }
-    
-    // MARK: - Helper Methods
-    
+        
     private func startEditingName() {
         editedGroupName = currentGroup.name
         isEditingName = true
@@ -529,7 +520,6 @@ struct GroupSettingsView: View {
     }
 }
 
-// MARK: - Alert Helper
 struct GroupSettingsAlertItem: Identifiable {
     let id = UUID()
     let title: String

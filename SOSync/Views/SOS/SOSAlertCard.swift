@@ -1,16 +1,8 @@
-//
-//  SOSAlertCard.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 22/06/2025.
-//
-
 import SwiftUI
 import CoreLocation
 import MapKit
 import FirebaseDatabase
 
-// MARK: - SOS Alert Card
 struct SOSAlertCard: View {
     let alert: SOSAlert
     @ObservedObject var groupViewModel: GroupViewModel
@@ -330,16 +322,10 @@ struct SOSAlertCard: View {
         Task {
             do {
                 let database = Database.database().reference()
-                
-                print("🚨 Starting SOS cancellation for alert: \(alert.id)")
-                print("🚨 Alert user: \(alert.userId)")
-                print("🚨 Alert group: \(alert.groupId)")
-                
                 // Mark the SOS as inactive
                 try await database.child("sosAlerts").child(alert.id).child("isActive").setValue(false)
-                print("✅ SOS alert marked as inactive")
                 
-                // ✅ Step 1: Check if there are other active SOS alerts for this group
+                // Step 1: Check if there are other active SOS alerts for this group
                 let groupSOSSnapshot = try await database.child("sosAlerts")
                     .queryOrdered(byChild: "groupId")
                     .queryEqual(toValue: alert.groupId)
@@ -355,17 +341,13 @@ struct SOSAlertCard: View {
                         break
                     }
                 }
-                
-                print("🔍 Other active SOS alerts exist: \(hasOtherActiveAlerts)")
-                
-                // ✅ Step 2: Check for active safety checks - ENHANCED to find the correct one
+                                
+                // Step 2: Check for active safety checks
                 let safetyChecksSnapshot = try await database.child("safetyChecks").getData()
                 var activeSafetyCheck: [String: Any]?
                 var activeSafetyCheckId: String?
                 var wasResponseToSafetyCheck = false
-                
-                print("🔍 Checking all safety checks...")
-                
+                                
                 let safetyEnumerator = safetyChecksSnapshot.children
                 while let child = safetyEnumerator.nextObject() as? DataSnapshot {
                     if let checkDict = child.value as? [String: Any],
@@ -374,20 +356,17 @@ struct SOSAlertCard: View {
                         
                         let checkId = child.key
                         let status = checkDict["status"] as? String ?? "pending"
-                        
-                        print("🔍 Found safety check: \(checkId), status: \(status)")
-                        
+                                                
                         if status == "pending" {
                             activeSafetyCheck = checkDict
                             activeSafetyCheckId = checkId
                             
-                            // ✅ CRITICAL FIX: Check if this SOS user has a response in this safety check
+                            // Check if this SOS user has a response in this safety check
                             if let responses = checkDict["responses"] as? [String: Any],
                                let userResponse = responses[alert.userId] as? [String: Any],
                                let responseStatus = userResponse["status"] as? String,
                                responseStatus == "sos" {
                                 
-                                print("✅ FOUND: This SOS was a response to safety check \(checkId)")
                                 wasResponseToSafetyCheck = true
                                 break
                             }
@@ -395,12 +374,9 @@ struct SOSAlertCard: View {
                     }
                 }
                 
-                // ✅ Step 3: If this SOS was a response to a safety check, remove the response
+                // Step 3: If this SOS was a response to a safety check, remove the response
                 if wasResponseToSafetyCheck,
                    let checkId = activeSafetyCheckId {
-                    
-                    print("🔄 Removing SOS response from safety check: \(checkId)")
-                    print("🔄 Removing response for user: \(alert.userId)")
                     
                     try await database
                         .child("safetyChecks")
@@ -408,14 +384,12 @@ struct SOSAlertCard: View {
                         .child("responses")
                         .child(alert.userId)
                         .removeValue()
-                    
-                    print("✅ Successfully removed SOS response from safety check")
-                    
-                    // ✅ Force reload the safety check to update UI immediately
+                                        
+                    // Force reload the safety check to update UI immediately
                     await groupViewModel.forceReloadSafetyChecks(groupId: alert.groupId)
                 }
                 
-                // ✅ Step 4: If there are still other active SOS alerts, keep emergency status
+                // Step 4: If there are still other active SOS alerts, keep emergency status
                 if hasOtherActiveAlerts {
                     print("🚨 Other active SOS alerts exist - keeping emergency status")
                     await MainActor.run {
@@ -424,12 +398,11 @@ struct SOSAlertCard: View {
                     return
                 }
                 
-                // ✅ Step 5: Determine the appropriate group status
+                // Step 5: Determine the appropriate group status
                 let newGroupStatus: String
                 
                 if let activeCheck = activeSafetyCheck,
                    let checkId = activeSafetyCheckId {
-                    print("🔍 Active safety check found - analyzing remaining responses...")
                     
                     // Get group members
                     let groupSnapshot = try await database.child("groups").child(alert.groupId).getData()
@@ -438,7 +411,7 @@ struct SOSAlertCard: View {
                         throw NSError(domain: "CancelSOS", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not get group members"])
                     }
                     
-                    // Get CURRENT responses (after potentially removing the SOS response above)
+                    // Get CURRENT responses
                     let currentResponsesSnapshot = try await database
                         .child("safetyChecks")
                         .child(checkId)
@@ -448,15 +421,6 @@ struct SOSAlertCard: View {
                     let currentResponses = currentResponsesSnapshot.value as? [String: Any] ?? [:]
                     let responseCount = currentResponses.count
                     
-                    print("🔍 Safety check status after SOS removal: \(responseCount)/\(members.count) responses")
-                    
-                    // Debug: Print all current responses
-                    for (userId, response) in currentResponses {
-                        if let resp = response as? [String: Any],
-                           let status = resp["status"] as? String {
-                            print("🔍 Response from \(userId): \(status)")
-                        }
-                    }
                     
                     // Check if all members have responded
                     let allResponded = members.allSatisfy { memberId in
@@ -476,7 +440,6 @@ struct SOSAlertCard: View {
                         }
                         
                         newGroupStatus = allSafe ? "allSafe" : "emergency"
-                        print("🔍 All responded after SOS removal - setting status to: \(newGroupStatus)")
                         
                         // If all safe, also mark the safety check as completed
                         if allSafe {
@@ -485,33 +448,27 @@ struct SOSAlertCard: View {
                                 .child(checkId)
                                 .child("status")
                                 .setValue("allSafe")
-                            print("✅ Marked safety check as completed (allSafe)")
                         }
                     } else {
                         // Not all responded - keep checking status
                         newGroupStatus = "checkingStatus"
-                        print("🔍 Not all responded after SOS removal - keeping checkingStatus")
                     }
                 } else {
                     // No active safety check and no other SOS alerts - return to normal
                     newGroupStatus = "normal"
-                    print("🔍 No active safety check or SOS alerts - setting to normal")
                 }
                 
-                // ✅ Step 6: Update group status
+                // Step 6: Update group status
                 try await database.child("groups").child(alert.groupId).child("currentStatus").setValue(newGroupStatus)
-                print("✅ Group status updated to: \(newGroupStatus)")
                 
-                // ✅ Step 7: Force reload safety checks to update the UI
+                // Step 7: Force reload safety checks to update the UI
                 await groupViewModel.forceReloadSafetyChecks(groupId: alert.groupId)
-                print("✅ Forced reload of safety checks")
                 
                 await MainActor.run {
                     isCancelling = false
                 }
                 
             } catch {
-                print("❌ Error cancelling SOS: \(error)")
                 await MainActor.run {
                     isCancelling = false
                     errorAlert = SOSAlertErrorItem(
@@ -524,7 +481,7 @@ struct SOSAlertCard: View {
     }
     
 }
-// MARK: - Alert Helper for SOSAlertCard
+
 struct SOSAlertErrorItem: Identifiable {
     let id = UUID()
     let title: String

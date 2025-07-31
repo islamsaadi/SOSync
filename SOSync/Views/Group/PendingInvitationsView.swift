@@ -1,13 +1,6 @@
-//
-//  PendingInvitationsView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 27/06/2025.
-//
-
 import SwiftUI
 
-// MARK: - Pending Invitations View
+
 struct PendingInvitationsView: View {
     let group: SafetyGroup
     @ObservedObject var groupViewModel: GroupViewModel

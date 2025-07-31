@@ -2,11 +2,9 @@
 //  User.swift
 //  SOSync
 //
-//  Created by Islam Saadi on 26/06/2025.
+//  Created by Islam Saadi on 22/06/2025.
 //
 
-
-// User model
 struct User: Identifiable, Codable {
     let id: String
     let username: String

@@ -5,7 +5,6 @@
 //  Created by Islam Saadi on 26/06/2025.
 //
 
-
 struct SOSAlert: Identifiable, Codable {
     let id: String
     let userId: String
@@ -55,7 +54,6 @@ struct SOSAlert: Identifiable, Codable {
         return dict
     }
     
-    // Helper computed property
     var isResolved: Bool {
         return !isActive || resolvedAt != nil
     }

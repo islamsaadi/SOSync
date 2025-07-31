@@ -88,7 +88,6 @@ struct MainTabView: View {
                 }
             }
         }
-        // ✅ FIX: Use .onChange(of:) { oldValue, newValue in } syntax
         .onChange(of: navigationTarget) { oldValue, newValue in
             handleNavigationTarget(newValue)
         }
@@ -102,7 +101,6 @@ struct MainTabView: View {
             selectedTab = 1
         case .safetyCheck(let groupId), .sosAlert(let groupId), .group(let groupId):
             selectedTab = 0
-            // The GroupsListView will handle the specific navigation based on the target
         }
         
         // Clear the navigation target after handling
