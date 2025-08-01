@@ -1,9 +1,3 @@
-//
-//  GroupsListView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 25/06/2025.
-//
 
 import SwiftUI
 import FirebaseAuth

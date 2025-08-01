@@ -391,7 +391,7 @@ struct SOSAlertCard: View {
                 
                 // Step 4: If there are still other active SOS alerts, keep emergency status
                 if hasOtherActiveAlerts {
-                    print("🚨 Other active SOS alerts exist - keeping emergency status")
+                    print("Other active SOS alerts exist - keeping emergency status")
                     await MainActor.run {
                         isCancelling = false
                     }
@@ -419,8 +419,6 @@ struct SOSAlertCard: View {
                         .getData()
                     
                     let currentResponses = currentResponsesSnapshot.value as? [String: Any] ?? [:]
-                    let responseCount = currentResponses.count
-                    
                     
                     // Check if all members have responded
                     let allResponded = members.allSatisfy { memberId in

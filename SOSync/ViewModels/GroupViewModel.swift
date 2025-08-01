@@ -576,7 +576,6 @@ class GroupViewModel: ObservableObject {
                 if let childSnapshot = child as? DataSnapshot,
                    let sosDict = childSnapshot.value as? [String: Any] {
                     
-                    let sosAlertId = childSnapshot.key
                     let sosIsActive = sosDict["isActive"] as? Bool ?? false
                     
                     if sosIsActive {
@@ -1121,7 +1120,7 @@ class GroupViewModel: ObservableObject {
             
             // Show response details using the model
             let respondedMembers = Array(safetyCheck.responses.keys)
-            let missingMembers = members.filter { !respondedMembers.contains($0) }
+//            let missingMembers = members.filter { !respondedMembers.contains($0) }
             
             // Check each response using the model
             var hasSOS = false

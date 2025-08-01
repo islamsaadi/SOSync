@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "icon_logo_sosync.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

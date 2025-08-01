@@ -1,10 +1,3 @@
-//
-//  SOSAlert.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 26/06/2025.
-//
-
 struct SOSAlert: Identifiable, Codable {
     let id: String
     let userId: String
