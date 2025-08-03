@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "icon_logo_sosync.png",
+      "filename" : "icon_logo_sosync_full.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,6 +13,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "icon_logo_sosync_full 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -24,6 +25,7 @@
           "value" : "tinted"
         }
       ],
+      "filename" : "icon_logo_sosync_full 2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

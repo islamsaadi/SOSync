@@ -440,11 +440,11 @@ struct ResponseSummaryView: View {
     }
 }
 
+// MVVM Fix: Updated GroupMembersStatusView
 struct GroupMembersStatusView: View {
     let safetyCheck: SafetyCheck
     let group: SafetyGroup
     @ObservedObject var groupViewModel: GroupViewModel
-    @State private var memberDetails: [String: User] = [:]
     @State private var isLoading = true
     
     var body: some View {
@@ -468,10 +468,15 @@ struct GroupMembersStatusView: View {
                         .foregroundStyle(Color.secondary)
                 }
                 .padding(.horizontal)
+            } else if groupViewModel.groupMembers.isEmpty {
+                Text("No members to display")
+                    .font(.callout)
+                    .foregroundStyle(Color.secondary)
+                    .padding(.horizontal)
             } else {
                 VStack(spacing: 8) {
                     ForEach(group.members, id: \.self) { memberId in
-                        if let member = memberDetails[memberId] {
+                        if let member = groupViewModel.groupMembers.first(where: { $0.id == memberId }) {
                             MemberStatusRow(
                                 member: member,
                                 response: safetyCheck.responses[memberId]
@@ -487,18 +492,11 @@ struct GroupMembersStatusView: View {
         }
     }
     
+    // MVVM Fix: Simplified to just call ViewModel method
     private func loadMemberDetails() {
         Task {
             await groupViewModel.loadGroupMembers(group: group)
-            
-            // Create member details dictionary
-            var details: [String: User] = [:]
-            for member in groupViewModel.groupMembers {
-                details[member.id] = member
-            }
-            
             await MainActor.run {
-                memberDetails = details
                 isLoading = false
             }
         }

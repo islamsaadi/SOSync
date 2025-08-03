@@ -6,11 +6,7 @@ struct InviteUserView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @Environment(\.dismiss) var dismiss
     
-    @State private var searchQuery = ""
-    @State private var foundUser: User?
-    @State private var isSearching = false
-    @State private var searchError: String?
-    @State private var validationError: String?
+    @StateObject private var viewModel = InviteUserViewModel()
     
     var body: some View {
         NavigationStack {
@@ -23,34 +19,23 @@ struct InviteUserView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            TextField("@username or phone", text: $searchQuery)
+                            TextField("@username or phone", text: $viewModel.searchQuery)
                                 .textInputAutocapitalization(.never)
-                                .onChange(of: searchQuery) { _, newValue in
-                                    // Clear previous results when user types
-                                    foundUser = nil
-                                    searchError = nil
-                                    
-                                    // Validate input in real-time
-                                    let validation = authViewModel.validateSearchQuery(newValue)
-                                    switch validation {
-                                    case .valid:
-                                        validationError = nil
-                                    case .invalid(let error):
-                                        validationError = newValue.isEmpty ? nil : error
-                                    }
+                                .onChange(of: viewModel.searchQuery) { _, _ in
+                                    viewModel.validateSearchQuery()
                                 }
                             
                             Button("Search") {
                                 searchUser()
                             }
-                            .disabled(searchQuery.isEmpty || isSearching || validationError != nil)
+                            .disabled(!viewModel.canSearch)
                         }
                         .padding()
                         .background(Color(.secondarySystemBackground))
                         .cornerRadius(10)
                         
                         // Validation error
-                        if let validationError = validationError {
+                        if let validationError = viewModel.validationError {
                             Text(validationError)
                                 .font(.caption)
                                 .foregroundStyle(.red)
@@ -60,7 +45,7 @@ struct InviteUserView: View {
                 .padding(.horizontal)
                 
                 // Search result
-                if let user = foundUser {
+                if let user = viewModel.foundUser {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("User Found")
                             .font(.headline)
@@ -93,7 +78,7 @@ struct InviteUserView: View {
                 }
                 
                 // Search error
-                if let error = searchError {
+                if let error = viewModel.searchError {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
@@ -105,7 +90,7 @@ struct InviteUserView: View {
                 }
                 
                 // Loading indicator
-                if isSearching {
+                if viewModel.isSearching {
                     HStack {
                         ProgressView()
                             .scaleEffect(0.8)
@@ -143,53 +128,23 @@ struct InviteUserView: View {
                     }
                 }
             }
-        }
-    }
-    
-    private func searchUser() {
-        // Validate input before searching
-        let validation = authViewModel.validateSearchQuery(searchQuery)
-        switch validation {
-        case .invalid(let error):
-            searchError = error
-            return
-        case .valid:
-            break
-        }
-        
-        isSearching = true
-        searchError = nil
-        foundUser = nil
-        
-        Task {
-            do {
-                let user = await authViewModel.searchUser(by: searchQuery)
-                await MainActor.run {
-                    if let user = user {
-                        // Check if user is already in group
-                        if group.members.contains(user.id) {
-                            searchError = "User is already a member of this group"
-                            foundUser = nil
-                        } else if let pendingMembers = group.pendingMembers, pendingMembers.contains(user.id) {
-                            // Safely unwrap and check pendingMembers
-                            searchError = "User has already been invited"
-                            foundUser = nil
-                        } else {
-                            foundUser = user
-                            searchError = nil
-                        }
-                    } else {
-                        searchError = "No user found with that username or phone number"
-                        foundUser = nil
-                    }
-                    isSearching = false
-                }
+            .onAppear {
+                viewModel.setupWith(
+                    authViewModel: authViewModel,
+                    group: group
+                )
             }
         }
     }
     
+    private func searchUser() {
+        Task {
+            await viewModel.searchUser()
+        }
+    }
+    
     private func inviteUser() {
-        guard let user = foundUser,
+        guard let user = viewModel.foundUser,
               let currentUserId = authViewModel.currentUser?.id else { return }
         
         Task {
