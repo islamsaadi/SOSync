@@ -1,9 +1,3 @@
-//
-//  LocationManager.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 26/06/2025.
-//
 
 import SwiftUI
 import CoreLocation

@@ -1,9 +1,3 @@
-//
-//  InvitationsViewModel.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 23/06/2025.
-//
 
 import Foundation
 import FirebaseDatabase

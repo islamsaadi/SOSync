@@ -1,29 +1,19 @@
-//
-//  GroupsListView.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 25/06/2025.
-//
-
 import SwiftUI
 import FirebaseAuth
 
 struct GroupsListView: View {
-    // Add navigationTarget binding parameter
+    
     @Binding var navigationTarget: ContentView.NavigationTarget?
     
     @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var groupViewModel = GroupViewModel()
     @State private var showCreateGroup = false
     @State private var selectedGroup: SafetyGroup?
-    
-    // Cache sorted groups to avoid recomputation on every view refresh
-    @State private var sortedGroups: [SafetyGroup] = []
 
     var body: some View {
         NavigationStack {
             List {
-                if sortedGroups.isEmpty && !groupViewModel.isLoading {
+                if groupViewModel.sortedGroups.isEmpty && !groupViewModel.isLoading {
                     ContentUnavailableView {
                         Label("No Groups", systemImage: "person.3")
                     } description: {
@@ -36,8 +26,8 @@ struct GroupsListView: View {
                     }
                     .listRowBackground(Color.clear)
                 } else {
-                    // Use cached sorted groups
-                    ForEach(sortedGroups) { group in
+                    // Use sorted groups from ViewModel
+                    ForEach(groupViewModel.sortedGroups) { group in
                         GroupRowView(group: group)
                             .onTapGesture {
                                 selectedGroup = group
@@ -64,11 +54,9 @@ struct GroupsListView: View {
                     await groupViewModel.loadUserGroups(userId: userId)
                 }
             }
-            .onChange(of: groupViewModel.groups) { _, newGroups in
-                updateSortedGroups(newGroups)
-            }
             .onAppear {
-                updateSortedGroups(groupViewModel.groups)
+                // Trigger initial sort when view appears
+                groupViewModel.updateSortedGroups()
             }
             .sheet(isPresented: $showCreateGroup) {
                 CreateGroupView(groupViewModel: groupViewModel)
@@ -77,34 +65,6 @@ struct GroupsListView: View {
             .navigationDestination(item: $selectedGroup) { group in
                 GroupDetailView(group: group, groupViewModel: groupViewModel)
             }
-        }
-    }
-    
-    private func updateSortedGroups(_ groups: [SafetyGroup]) {
-        let newSortedGroups = groups.sorted { group1, group2 in
-            // Sort by status priority (higher priority number = shown first)
-            let priority1 = group1.currentStatus.priority
-            let priority2 = group2.currentStatus.priority
-            
-            if priority1 != priority2 {
-                return priority1 > priority2  // Higher priority first
-            }
-            
-            // If same priority, sort by most recent activity (lastSafetyCheck)
-            let time1 = group1.lastSafetyCheck ?? 0
-            let time2 = group2.lastSafetyCheck ?? 0
-            
-            if time1 != time2 {
-                return time1 > time2  // Most recent first
-            }
-            
-            // If same priority and time, sort alphabetically by name
-            return group1.name.lowercased() < group2.name.lowercased()
-        }
-        
-        // Only update if the sorted order actually changed
-        if sortedGroups != newSortedGroups {
-            sortedGroups = newSortedGroups
         }
     }
 }

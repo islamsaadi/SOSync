@@ -6,6 +6,7 @@ struct SOSView: View {
     @StateObject private var locationManager = LocationManager()
     @State private var selectedGroup: SafetyGroup?
     @State private var sosMessage = ""
+    @State private var errorAlert: SOSViewAlertItem?
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     
@@ -66,6 +67,13 @@ struct SOSView: View {
             }
             .sheet(item: $selectedGroup) { group in
                 SOSDetailView(group: group, groupViewModel: groupViewModel, locationManager: locationManager)
+            }
+            .alert(item: $errorAlert) { alertItem in
+                Alert(
+                    title: Text(alertItem.title),
+                    message: Text(alertItem.message),
+                    dismissButton: .default(Text("OK"))
+                )
             }
         }
     }
@@ -135,25 +143,45 @@ struct SOSView: View {
         }
     }
     
+    // MVVM Fix: Call ViewModel method instead of implementing logic here
     private func sendSOSToAllGroups() {
-        guard let userId = authViewModel.currentUser?.id,
-              let location = locationManager.lastLocation else { return }
+        guard let userId = authViewModel.currentUser?.id else {
+            errorAlert = SOSViewAlertItem(
+                title: "Authentication Error",
+                message: "Unable to identify user. Please try again."
+            )
+            return
+        }
         
-        let locationData = LocationData(
-            latitude: location.coordinate.latitude,
-            longitude: location.coordinate.longitude,
-            address: nil
-        )
+        guard let location = locationManager.lastLocation else {
+            errorAlert = SOSViewAlertItem(
+                title: "Location Required",
+                message: "Please enable location services to send SOS alerts."
+            )
+            return
+        }
         
         Task {
-            for group in groupViewModel.groups {
-                _ = await groupViewModel.sendSOSAlert(
-                    groupId: group.id,
+            do {
+                try await groupViewModel.sendSOSToAllGroups(
                     userId: userId,
-                    location: locationData,
+                    location: location,
                     message: "Emergency SOS sent to all groups"
                 )
+            } catch {
+                await MainActor.run {
+                    errorAlert = SOSViewAlertItem(
+                        title: "SOS Failed",
+                        message: error.localizedDescription
+                    )
+                }
             }
         }
     }
+}
+
+struct SOSViewAlertItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
 }

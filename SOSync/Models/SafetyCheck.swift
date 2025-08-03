@@ -1,11 +1,4 @@
-//
-//  SafetyCheck.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 26/06/2025.
-//
 
-// Safety Check model
 struct SafetyCheck: Identifiable, Codable {
     let id: String
     let groupId: String

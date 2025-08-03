@@ -1,12 +1,4 @@
-//
-//  ActiveSafetyCheckCard.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 24/06/2025.
-//
-
 import SwiftUI
-import FirebaseDatabase
 
 struct ActiveSafetyCheckCard: View {
     let safetyCheck: SafetyCheck
@@ -386,21 +378,16 @@ struct ActiveSafetyCheckCard: View {
             }
         }
     }
-        
+    
     private func loadInitiatorInfo() {
         Task {
             do {
-                let database = Database.database().reference()
-                let userData = try await database.child("users").child(safetyCheck.initiatedBy).getData()
-                if let userDict = userData.value as? [String: Any],
-                   let jsonData = try? JSONSerialization.data(withJSONObject: userDict),
-                   let user = try? JSONDecoder().decode(User.self, from: jsonData) {
-                    await MainActor.run {
-                        self.initiatorUser = user
-                    }
+                let user = try await groupViewModel.loadUserForSOSAlert(userId: safetyCheck.initiatedBy)
+                await MainActor.run {
+                    self.initiatorUser = user
                 }
             } catch {
-                print("Error loading initiator info:", error)
+                print("Error loading initiator info: \(error)")
             }
         }
     }

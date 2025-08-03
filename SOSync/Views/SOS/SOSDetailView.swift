@@ -9,6 +9,7 @@ struct SOSDetailView: View {
     
     @State private var message = ""
     @State private var isSending = false
+    @State private var errorAlert: SOSDetailAlertItem?
     
     var body: some View {
         NavigationStack {
@@ -52,26 +53,40 @@ struct SOSDetailView: View {
                     }
                 }
             }
+            .alert(item: $errorAlert) { alertItem in
+                Alert(
+                    title: Text(alertItem.title),
+                    message: Text(alertItem.message),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
         }
     }
     
     private func sendSOS() {
-        guard let userId = authViewModel.currentUser?.id,
-              let location = locationManager.lastLocation else { return }
+        guard let userId = authViewModel.currentUser?.id else {
+            errorAlert = SOSDetailAlertItem(
+                title: "Authentication Error",
+                message: "Unable to identify user. Please try again."
+            )
+            return
+        }
+        
+        guard let location = locationManager.lastLocation else {
+            errorAlert = SOSDetailAlertItem(
+                title: "Location Required",
+                message: "Please enable location services to send SOS alerts."
+            )
+            return
+        }
         
         isSending = true
         
-        let locationData = LocationData(
-            latitude: location.coordinate.latitude,
-            longitude: location.coordinate.longitude,
-            address: nil
-        )
-        
         Task {
-            let success = await groupViewModel.sendSOSAlert(
+            let success = await groupViewModel.sendSOSAlertWithCLLocation(
                 groupId: group.id,
                 userId: userId,
-                location: locationData,
+                location: location,
                 message: message.isEmpty ? nil : message
             )
             
@@ -79,8 +94,19 @@ struct SOSDetailView: View {
                 isSending = false
                 if success {
                     dismiss()
+                } else {
+                    errorAlert = SOSDetailAlertItem(
+                        title: "SOS Failed",
+                        message: groupViewModel.errorMessage ?? "Failed to send SOS alert"
+                    )
                 }
             }
         }
     }
+}
+
+struct SOSDetailAlertItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
 }

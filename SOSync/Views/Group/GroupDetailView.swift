@@ -483,46 +483,21 @@ struct GroupDetailView: View {
         }
     }
     
-    // Enhanced setupView function
     private func setupView() {
-        groupViewModel.setCurrentGroup(currentGroup)
-        
-        // Force load all data every time we enter
         Task {
-            await groupViewModel.loadGroupMembers(group: currentGroup)
-            await groupViewModel.forceReloadSafetyChecks(groupId: currentGroup.id)
-            
-            // Also force reload SOS alerts
-            await groupViewModel.forceReloadSOSAlerts(groupId: currentGroup.id)
-            
-            // Load pending invitations if admin
-            if isAdmin {
-                await groupViewModel.loadPendingInvitations(groupId: currentGroup.id)
-            }
-            
-            // Debug current state
-//            await MainActor.run {
-//                let alerts = groupViewModel.activeSOSAlerts
-//                print("Setup complete - Active SOS alerts: \(alerts.count)")
-//                print("Group status: \(currentGroup.currentStatus)")
-//                for alert in alerts {
-//                    print("Alert: \(alert.id), User: \(alert.userId), Active: \(alert.isActive)")
-//                }
-//            }
+            await groupViewModel.setupGroupDetail(
+                group: currentGroup,
+                isAdmin: isAdmin
+            )
         }
         locationManager.requestLocation()
     }
 
-    // Enhanced refreshData function
     private func refreshData() async {
-        await groupViewModel.loadGroupMembers(group: currentGroup)
-        await groupViewModel.forceReloadSafetyChecks(groupId: currentGroup.id)
-        await groupViewModel.forceReloadSOSAlerts(groupId: currentGroup.id)
-        
-        // Refresh pending invitations if admin
-        if isAdmin {
-            await groupViewModel.loadPendingInvitations(groupId: currentGroup.id)
-        }
+        await groupViewModel.refreshGroupDetail(
+            group: currentGroup,
+            isAdmin: isAdmin
+        )
     }
     
     private func loadPendingInvitationsAndShowSettings() {

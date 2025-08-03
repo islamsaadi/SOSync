@@ -13,6 +13,8 @@ class GroupViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var safetyChecks: [SafetyCheck] = []
+    @Published var sortedGroups: [SafetyGroup] = []
+
 
     private let database = Database.database().reference()
     private var groupListeners: [String: DatabaseHandle] = [:]
@@ -52,6 +54,54 @@ class GroupViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             isLoading = false
+        }
+    }
+    
+    func updateSortedGroups() {
+        sortedGroups = groups.sorted { group1, group2 in
+            // Sort by status priority (higher priority number = shown first)
+            let priority1 = group1.currentStatus.priority
+            let priority2 = group2.currentStatus.priority
+            
+            if priority1 != priority2 {
+                return priority1 > priority2  // Higher priority first
+            }
+            
+            // If same priority, sort by most recent activity (lastSafetyCheck)
+            let time1 = group1.lastSafetyCheck ?? 0
+            let time2 = group2.lastSafetyCheck ?? 0
+            
+            if time1 != time2 {
+                return time1 > time2  // Most recent first
+            }
+            
+            // If same priority and time, sort alphabetically by name
+            return group1.name.lowercased() < group2.name.lowercased()
+        }
+    }
+    
+    func setupGroupDetail(group: SafetyGroup, isAdmin: Bool) async {
+        setCurrentGroup(group)
+        
+        // Load all necessary data
+        await loadGroupMembers(group: group)
+        await forceReloadSafetyChecks(groupId: group.id)
+        await forceReloadSOSAlerts(groupId: group.id)
+        
+        // Load pending invitations if admin
+        if isAdmin {
+            await loadPendingInvitations(groupId: group.id)
+        }
+    }
+        
+    func refreshGroupDetail(group: SafetyGroup, isAdmin: Bool) async {
+        await loadGroupMembers(group: group)
+        await forceReloadSafetyChecks(groupId: group.id)
+        await forceReloadSOSAlerts(groupId: group.id)
+        
+        // Refresh pending invitations if admin
+        if isAdmin {
+            await loadPendingInvitations(groupId: group.id)
         }
     }
 
@@ -548,6 +598,10 @@ class GroupViewModel: ObservableObject {
                 "lastSafetyCheck": now
             ])
             
+            await MainActor.run {
+                self.updateSortedGroups()
+            }
+            
             return true
             
         } catch {
@@ -616,6 +670,10 @@ class GroupViewModel: ObservableObject {
                     .child("currentStatus")
                     .setValue(SafetyGroupStatus.normal.rawValue)
                 
+                await MainActor.run {
+                    self.updateSortedGroups()
+                }
+                
                 print("Auto-reset group \(groupId) status to normal")
                 
             } catch {
@@ -657,11 +715,33 @@ class GroupViewModel: ObservableObject {
                 .child("currentStatus")
                 .setValue(SafetyGroupStatus.emergency.rawValue)
             
+            
+            await MainActor.run {
+                self.updateSortedGroups()
+            }
+            
             return true
         } catch {
             errorMessage = error.localizedDescription
             return false
         }
+    }
+    
+    
+    func sendSOSAlertWithCLLocation(groupId: String, userId: String, location: CLLocation, message: String? = nil) async -> Bool {
+        // Convert CLLocation to LocationData
+        let locationData = LocationData(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            address: nil
+        )
+        
+        return await sendSOSAlert(
+            groupId: groupId,
+            userId: userId,
+            location: locationData,
+            message: message
+        )
     }
     
     func loadGroupMembers(group: SafetyGroup) async {
@@ -877,7 +957,9 @@ class GroupViewModel: ObservableObject {
                             self.groups.append(group)
                         }
                         self.isLoading = false
-
+                        
+                        self.updateSortedGroups()
+                        
                         self.listenForSafetyChecks(groupId: id)
                         self.listenForSOSAlerts(groupId: id)
                     }
@@ -885,6 +967,7 @@ class GroupViewModel: ObservableObject {
                     print("Error decoding group \(id):", error)
                     Task { @MainActor in
                         self.errorMessage = "Failed to load group data"
+                        self.updateSortedGroups()
                     }
                 }
             }
@@ -972,7 +1055,7 @@ class GroupViewModel: ObservableObject {
                 Task { @MainActor in
                     let sortedChecks = checks.sorted { $0.timestamp > $1.timestamp }
                     self.safetyChecks = sortedChecks
-                    
+                    self.updateSortedGroups()
                     print("LISTENER UPDATED safetyChecks: \(sortedChecks.count) total for group \(groupId)")
                     if let recent = sortedChecks.first {
                         print("Most recent check: \(recent.id), status: \(recent.status)")
@@ -1022,6 +1105,8 @@ class GroupViewModel: ObservableObject {
                 Task { @MainActor in
                     self.sosAlertsByGroup[groupId] = alerts
                     
+                    self.updateSortedGroups()
+                    
                     // Force UI update
                     self.objectWillChange.send()
                     
@@ -1063,7 +1148,7 @@ class GroupViewModel: ObservableObject {
                 
             } else if responseData.keys.contains(checkId) {
                 // CASE 2: We got all safety checks, extract the specific one
-                print("🔍 Received ALL safety checks data, extracting specific one")
+                print("Received ALL safety checks data, extracting specific one")
                 guard let specificData = responseData[checkId] as? [String: Any] else {
                     return
                 }
@@ -1181,6 +1266,10 @@ class GroupViewModel: ObservableObject {
                     .setValue(SafetyCheckStatus.pending.rawValue)
                 
                 await forceReloadSafetyChecks(groupId: safetyCheck.groupId);
+            }
+            
+            await MainActor.run {
+                self.updateSortedGroups()
             }
             
         } catch {
@@ -1452,8 +1541,222 @@ class GroupViewModel: ObservableObject {
             print("Error resolving SOS alert \(alertId): \(error)")
         }
     }
-
     
+    func loadUserForSOSAlert(userId: String) async throws -> User {
+            let userData = try await database.child("users").child(userId).getData()
+            
+            guard let userDict = userData.value as? [String: Any],
+                  let jsonData = try? JSONSerialization.data(withJSONObject: userDict),
+                  let user = try? JSONDecoder().decode(User.self, from: jsonData) else {
+                throw NSError(domain: "SOSAlert", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not load user data"])
+            }
+            
+            return user
+        }
+        
+    // Handle SOS cancellation
+    func cancelSOSAlert(alert: SOSAlert, isMyAlert: Bool, isAdmin: Bool, currentUserId: String) async throws {
+        // Check permissions first
+        let now = Date().timeIntervalSince1970
+        let twentyFourHours: Double = 24 * 60 * 60
+        
+        let canCancel = isMyAlert || (isAdmin && (now - alert.timestamp) > twentyFourHours)
+        
+        guard canCancel else {
+            if isAdmin {
+                let hoursLeft = Int((twentyFourHours - (now - alert.timestamp)) / 3600)
+                throw SOSCancellationError.adminTimeRestriction(hoursLeft: hoursLeft)
+            } else {
+                throw SOSCancellationError.notAuthorized(
+                    title: "Cannot Cancel SOS",
+                    message: "You can only cancel your own SOS alerts."
+                )
+            }
+        }
+        
+        do {
+            // Mark the SOS as inactive
+            try await database.child("sosAlerts").child(alert.id).child("isActive").setValue(false)
+            
+            // Step 1: Check if there are other active SOS alerts for this group
+            let groupSOSSnapshot = try await database.child("sosAlerts")
+                .queryOrdered(byChild: "groupId")
+                .queryEqual(toValue: alert.groupId)
+                .getData()
+            
+            var hasOtherActiveAlerts = false
+            let enumerator = groupSOSSnapshot.children
+            while let child = enumerator.nextObject() as? DataSnapshot {
+                if let alertDict = child.value as? [String: Any],
+                   let isActive = alertDict["isActive"] as? Bool,
+                   isActive && child.key != alert.id {
+                    hasOtherActiveAlerts = true
+                    break
+                }
+            }
+            
+            // Step 2: Check for active safety checks
+            let safetyChecksSnapshot = try await database.child("safetyChecks").getData()
+            var activeSafetyCheck: [String: Any]?
+            var activeSafetyCheckId: String?
+            var wasResponseToSafetyCheck = false
+            
+            let safetyEnumerator = safetyChecksSnapshot.children
+            while let child = safetyEnumerator.nextObject() as? DataSnapshot {
+                if let checkDict = child.value as? [String: Any],
+                   let checkGroupId = checkDict["groupId"] as? String,
+                   checkGroupId == alert.groupId {
+                    
+                    let checkId = child.key
+                    let status = checkDict["status"] as? String ?? "pending"
+                    
+                    if status == "pending" {
+                        activeSafetyCheck = checkDict
+                        activeSafetyCheckId = checkId
+                        
+                        // Check if this SOS user has a response in this safety check
+                        if let responses = checkDict["responses"] as? [String: Any],
+                           let userResponse = responses[alert.userId] as? [String: Any],
+                           let responseStatus = userResponse["status"] as? String,
+                           responseStatus == "sos" {
+                            
+                            wasResponseToSafetyCheck = true
+                            break
+                        }
+                    }
+                }
+            }
+            
+            // Step 3: If this SOS was a response to a safety check, remove the response
+            if wasResponseToSafetyCheck,
+               let checkId = activeSafetyCheckId {
+                
+                try await database
+                    .child("safetyChecks")
+                    .child(checkId)
+                    .child("responses")
+                    .child(alert.userId)
+                    .removeValue()
+                
+                // Force reload the safety check to update UI immediately
+                await forceReloadSafetyChecks(groupId: alert.groupId)
+            }
+            
+            // Step 4: If there are still other active SOS alerts, keep emergency status
+            if hasOtherActiveAlerts {
+                print("Other active SOS alerts exist - keeping emergency status")
+                return
+            }
+            
+            // Step 5: Determine the appropriate group status
+            let newGroupStatus: String
+            
+            if let activeCheck = activeSafetyCheck,
+               let checkId = activeSafetyCheckId {
+                
+                // Get group members
+                let groupSnapshot = try await database.child("groups").child(alert.groupId).getData()
+                guard let groupDict = groupSnapshot.value as? [String: Any],
+                      let members = groupDict["members"] as? [String] else {
+                    throw SOSCancellationError.databaseError("Could not get group members")
+                }
+                
+                // Get CURRENT responses
+                let currentResponsesSnapshot = try await database
+                    .child("safetyChecks")
+                    .child(checkId)
+                    .child("responses")
+                    .getData()
+                
+                let currentResponses = currentResponsesSnapshot.value as? [String: Any] ?? [:]
+                
+                // Check if all members have responded
+                let allResponded = members.allSatisfy { memberId in
+                    currentResponses[memberId] != nil
+                }
+                
+                if allResponded {
+                    // All responded - check if all are safe (no more SOS responses)
+                    var allSafe = true
+                    for (_, responseData) in currentResponses {
+                        if let resp = responseData as? [String: Any],
+                           let status = resp["status"] as? String,
+                           status == "sos" {
+                            allSafe = false
+                            break
+                        }
+                    }
+                    
+                    newGroupStatus = allSafe ? "allSafe" : "emergency"
+                    
+                    // If all safe, also mark the safety check as completed
+                    if allSafe {
+                        try await database
+                            .child("safetyChecks")
+                            .child(checkId)
+                            .child("status")
+                            .setValue("allSafe")
+                    }
+                } else {
+                    // Not all responded - keep checking status
+                    newGroupStatus = "checkingStatus"
+                }
+            } else {
+                // No active safety check and no other SOS alerts - return to normal
+                newGroupStatus = "normal"
+            }
+            
+            // Step 6: Update group status
+            try await database.child("groups").child(alert.groupId).child("currentStatus").setValue(newGroupStatus)
+            
+            // Step 7: Force reload safety checks to update the UI
+            await forceReloadSafetyChecks(groupId: alert.groupId)
+            
+        } catch {
+            if let sosError = error as? SOSCancellationError {
+                throw sosError
+            } else {
+                throw SOSCancellationError.databaseError(error.localizedDescription)
+            }
+        }
+    }
+    
+    func sendSOSToAllGroups(userId: String, location: CLLocation, message: String) async throws {
+        // Convert CLLocation to LocationData
+        let locationData = LocationData(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            address: nil
+        )
+        
+        // Track failures
+        var failedGroups: [String] = []
+        
+        // Send SOS to each group
+        for group in groups {
+            let success = await sendSOSAlert(
+                groupId: group.id,
+                userId: userId,
+                location: locationData,
+                message: message
+            )
+            
+            if !success {
+                failedGroups.append(group.name)
+            }
+        }
+        
+        // If any groups failed, throw an error with details
+        if !failedGroups.isEmpty {
+            let failedGroupsList = failedGroups.joined(separator: ", ")
+            throw NSError(
+                domain: "SOSAlert",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to send SOS to groups: \(failedGroupsList)"]
+            )
+        }
+    }
+
     private func removeAllListeners() {
         for (gid, handle) in groupListeners {
             database.child("groups").child(gid).removeObserver(withHandle: handle)
@@ -1474,5 +1777,38 @@ class GroupViewModel: ObservableObject {
             database.removeObserver(withHandle: handle)
             pendingInvitationsListener = nil
         }
+    }
+}
+
+
+enum SOSCancellationError: LocalizedError {
+    case notAuthorized(title: String, message: String)
+    case adminTimeRestriction(hoursLeft: Int)
+    case databaseError(String)
+    
+    var title: String {
+        switch self {
+        case .notAuthorized(let title, _):
+            return title
+        case .adminTimeRestriction:
+            return "Cannot Cancel SOS"
+        case .databaseError:
+            return "Database Error"
+        }
+    }
+    
+    var message: String {
+        switch self {
+        case .notAuthorized(_, let message):
+            return message
+        case .adminTimeRestriction(let hoursLeft):
+            return "Admins can cancel SOS alerts after 24 hours. \(hoursLeft) hours remaining."
+        case .databaseError(let error):
+            return "Failed to cancel SOS alert: \(error)"
+        }
+    }
+    
+    var errorDescription: String? {
+        return message
     }
 }

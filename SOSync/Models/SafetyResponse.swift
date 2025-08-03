@@ -1,10 +1,3 @@
-//
-//  SafetyResponse.swift
-//  SOSync
-//
-//  Created by Islam Saadi on 26/06/2025.
-//
-
 struct SafetyResponse: Codable {
     let userId: String
     let status: SafetyResponseStatus
